@@ -38,6 +38,8 @@ def postprocess_matrix(path):
         )
     )
 
+    # main_block_one = np.random.permutation(main_block_one, axis=)
+
     if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint, axis=0) for index in range(main_block_one.shape[1])]):
         print('obligatory test point not included, appending an additional measurement point')
         main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
@@ -45,7 +47,7 @@ def postprocess_matrix(path):
 
     wind_off_block = np.vstack(
         (
-            unique_alphas, np.zeros(num_unique_alphas), np.full(num_unique_alphas, de_setting_0), np.zeros(num_unique_alphas)
+            np.random.permutation(unique_alphas), np.zeros(num_unique_alphas), np.full(num_unique_alphas, de_setting_0), np.zeros(num_unique_alphas)
         )
     )
 
