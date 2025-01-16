@@ -45,7 +45,7 @@ def timings(matrix):
 
             if delta_V_inf != 0:  # time to change free-stream conditions
                 t_change_settings += t_change_freestream
-            elif delta_alpha != 0 or delta_J != 0:
+            elif (delta_alpha != 0 or delta_J != 0) and matrix[3, index] != 0:
                 t_change_settings += t_small_change_freestream
 
             if delta_J != 0: # time to adjust propeller RPM
