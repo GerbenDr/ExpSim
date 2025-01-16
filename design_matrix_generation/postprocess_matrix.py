@@ -11,6 +11,12 @@ V_diff = 20
 
 n_different_Re = 15
 
+np.random.seed(0)
+
+def shuffle_along_axis(a, axis):
+    idx = np.random.rand(*a.shape).argsort(axis=axis)
+    return np.take_along_axis(a,idx,axis=axis)
+
 def postprocess_matrix(path):
 
     df = pd.read_csv(path)
@@ -38,12 +44,21 @@ def postprocess_matrix(path):
         )
     )
 
-    # random permutation
-    permuted_columns = np.random.permutation(main_block_one.shape[1])
-    main_block_one = main_block_one[:, permuted_columns]
+    # pair-wise randomization
+    pairs = main_block_one.reshape(4, main_block_one.shape[1] // 2, 2)  # Shape becomes (4, N//2, 2)
+    pairs = shuffle_along_axis(pairs, axis=-1)
+    main_block_one = pairs.reshape(4, main_block_one.shape[1] )
 
-    permuted_columns = np.random.permutation(main_block_two.shape[1])
-    main_block_two = main_block_two[:, permuted_columns]
+    pairs = main_block_two.reshape(4, main_block_two.shape[1]  // 2, 2)  # Shape becomes (4, N//2, 2)
+    pairs = shuffle_along_axis(pairs, axis=-1)
+    main_block_two = pairs.reshape(4, main_block_two.shape[1] )
+
+    # # random permutation
+    # permuted_columns = np.random.permutation(main_block_one.shape[1])
+    # main_block_one = main_block_one[:, permuted_columns]
+
+    # permuted_columns = np.random.permutation(main_block_two.shape[1])
+    # main_block_two = main_block_two[:, permuted_columns]
 
     if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint, axis=0) for index in range(main_block_one.shape[1])]):
         print('obligatory test point not included, appending an additional measurement point')
