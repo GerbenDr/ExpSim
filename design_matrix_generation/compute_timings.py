@@ -8,6 +8,7 @@ t_change_prop = 15
 t_change_elevator = 10 * 60
 t_aerodynamic_measurement = 10
 t_aeroacoustic_measurement= 60
+t_human_operator = 10
 
 total_tunnel_time = 60 * 60 * 1.75  # 1:45 minutes
 
@@ -29,11 +30,11 @@ def timings(matrix):
         else:
             t_measurement = t_aerodynamic_measurement
 
-        t_change_settings = 0.0
+        t_change_settings = t_human_operator
 
         if index == 0: # first measurement, only worry about alpha change time
             delta_alpha = matrix[0, index]
-            t_change_settings = np.abs(delta_alpha) / alpha_rate
+            t_change_settings += np.abs(delta_alpha) / alpha_rate
 
         else: # any subsequent measurement
             delta_alpha = matrix[0, index] - matrix[0, index-1]

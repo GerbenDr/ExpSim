@@ -9,7 +9,7 @@ obligatory_testpoint = np.array([8, 1.6, 0, 40]).T
 V_base = 40
 V_diff = 20
 
-n_different_Re = 15
+n_different_Re = 10
 
 np.random.seed(0)
 
