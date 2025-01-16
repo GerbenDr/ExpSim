@@ -8,13 +8,13 @@ library(AlgDesign)
 
 # Factor: Alpha (Angle of Attack)
 alpha_L = -4
-alpha_U = 7
-alpha_stepsize = 0.1
+alpha_U = 8
+alpha_stepsize = 1.0
 
 # Factor: J (Advance Ratio)
-J_L = 1.8
-J_U = 2.2
-J_stepsize = 0.02
+J_L = 1.6
+J_U = 2.4
+J_stepsize = 0.2
 
 # Factor: delta_e (Elevator Deflection)
 # NOTE: delta_e is a binary factor, so we only need to specify the levels
@@ -24,7 +24,7 @@ delta_e_U = 10
 # --------------------------------------------------------------------------------------------
 
 ## Specify the number of test points
-number_of_trials = 100
+number_of_trials = 60
 
 # --------------------------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ start <- Sys.time()
 # Third, the criterion is specified (I-criterion)
 # Fourth, the number of trials is specified (100)
 design <- optFederov(
-  ~ poly(alpha, 3) + poly(J, 3) + poly(delta_e, 1) + J:alpha,
+  ~ poly(alpha, 3) + poly(J, 3) + poly(delta_e, 1) + poly(alpha, 2):poly(J, 2) + poly(alpha, 2):delta_e + poly(J, 2):delta_e,
   data = candidates,
   criterion = "I",
   nTrials = number_of_trials
