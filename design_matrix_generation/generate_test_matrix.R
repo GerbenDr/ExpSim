@@ -36,6 +36,10 @@ candidates <- expand.grid(
 )
 
 # --------------------------------------------------------------------------------------------
+set.seed(123)  # For reproducibility
+# block_labels <- rep(paste0("Block ", 1:(number_of_trials / 10)), each = 10)
+# candidates <- candidates[1:length(block_labels), ]  # Limit to the required number of trials
+# candidates$block <- block_labels
 
 # Check the time it takes: start a timer
 start <- Sys.time()
@@ -51,6 +55,8 @@ design <- optFederov(
   criterion = "I",
   nTrials = number_of_trials
 )
+
+
 
 # Check the time it takes: stop the timer
 end <- Sys.time()
