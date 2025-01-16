@@ -4,7 +4,7 @@ import numpy as np
 points_per_block = 10 
 de_setting_0 = 0  # starting setting
 de_setting_1 = 10
-obligatory_testpoint = np.array([8, 1.6, 0, 40]).T
+obligatory_testpoints = [np.array([8, 1.6, 0, 40]).reshape(4, 1), np.array([8, 0, 0, 40]).reshape(4, 1)]
 
 V_base = 40
 V_diff = 20
@@ -59,10 +59,10 @@ def postprocess_matrix(path):
 
     # permuted_columns = np.random.permutation(main_block_two.shape[1])
     # main_block_two = main_block_two[:, permuted_columns]
-
-    if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint, axis=0) for index in range(main_block_one.shape[1])]):
-        print('obligatory test point not included, appending an additional measurement point')
-        main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
+    for obligatory_testpoint in obligatory_testpoints:
+        if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint.T) for index in range(main_block_one.shape[1])]):
+            print('obligatory test point not included, appending an additional measurement point')
+            main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
 
 
     wind_off_block = np.vstack(
@@ -74,7 +74,7 @@ def postprocess_matrix(path):
     n_sweep = main_block_one.shape[1] // n_different_Re
     diff_re_block = main_block_one[:, ::n_sweep][:, :n_different_Re].copy()
     diff_re_block[3, :] = np.full(diff_re_block.shape[1], V_diff)
-    
+
     full_matrix = np.concatenate(
         (wind_off_block, main_block_one, diff_re_block, main_block_two), axis=1
     )
