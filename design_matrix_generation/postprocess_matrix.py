@@ -49,8 +49,9 @@ def postprocess_matrix(path):
         )
     )
 
-    diff_re_block = main_block_one[:, :n_different_Re].copy()
-    diff_re_block[3, :] = np.full(n_different_Re, V_diff)
+    n_sweep = main_block_one.shape[1] // n_different_Re
+    diff_re_block = main_block_one[:, ::n_sweep][:, :n_different_Re].copy()
+    diff_re_block[3, :] = np.full(diff_re_block.shape[1], V_diff)
     
     full_matrix = np.concatenate(
         (wind_off_block, main_block_one, diff_re_block, main_block_two), axis=1
@@ -63,16 +64,29 @@ def postprocess_matrix(path):
         )
     )[0]
 
-    return full_matrix, where_acoustic
+    # Initialize a boolean array of the same length as a, filled with False
+    bool_array = np.zeros(full_matrix.shape[1], dtype=bool)
+
+    # Set the indices where the condition is True to True
+    bool_array[where_acoustic] = True
+
+    full_matrix = np.vstack([full_matrix, bool_array])
+
+    return full_matrix
 
 if __name__ == "__main__":
 
     path = "design_matrix_generation/raw_test_matrix.csv"
 
-    matrix, where_acoustic = postprocess_matrix(path)
+    matrix = postprocess_matrix(path)
 
     print(matrix)
-    print(where_acoustic)
-    print(where_acoustic.shape)
-    print(matrix[:, where_acoustic])
+
+    # Convert the NumPy matrix to a DataFrame for easy handling
+    df = pd.DataFrame(matrix.T, columns=["AoA", "J", "delta_a", "V_inf", "Acoustic"])
+
+    # Save the DataFrame to a CSV file
+    df.to_csv('matrix_output.csv', index=False)
+
+    
     
