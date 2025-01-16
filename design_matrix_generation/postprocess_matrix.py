@@ -38,7 +38,12 @@ def postprocess_matrix(path):
         )
     )
 
-    # main_block_one = np.random.permutation(main_block_one, axis=)
+    # random permutation
+    permuted_columns = np.random.permutation(main_block_one.shape[1])
+    main_block_one = main_block_one[:, permuted_columns]
+
+    permuted_columns = np.random.permutation(main_block_two.shape[1])
+    main_block_two = main_block_two[:, permuted_columns]
 
     if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint, axis=0) for index in range(main_block_one.shape[1])]):
         print('obligatory test point not included, appending an additional measurement point')
