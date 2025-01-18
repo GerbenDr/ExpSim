@@ -7,7 +7,8 @@ alpha_rate = 0.5  # degrees per second
 t_change_prop = 15
 t_change_elevator = 10 * 60
 t_aerodynamic_measurement = 10
-t_aeroacoustic_measurement= 60
+# t_aeroacoustic_measurement= 60
+t_aeroacoustic_measurement= 20
 t_human_operator = 10
 
 total_tunnel_time = 60 * 60 * 1.75  # 1:45 minutes
@@ -70,6 +71,10 @@ def timings(matrix):
     return np.vstack((matrix, time))
 
 if __name__ == "__main__":
+
+    # uncomment when using pycharm
+    import os
+    os.chdir('..')
 
     path = "design_matrix_generation/raw_test_matrix.csv"
 

@@ -34,7 +34,7 @@ if __name__ == "__main__":
         delta_SNR = required_SNR - SNR
 
         n_samples_required = 10**(delta_SNR/10)
-        measurement_time_required = window_width * n_samples_required
+        measurement_time_required = window_width * n_samples_required  # assuming non-overlapping windows
 
         print('tunnel speed: {} m/s'.format(V))
         print('prop noise: {} dB'.format(NPmin))
