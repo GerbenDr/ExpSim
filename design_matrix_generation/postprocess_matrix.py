@@ -12,7 +12,8 @@ V_diff = 20
 
 n_different_Re = 8
 
-N_validation = 2 # per corner point
+N_repetitions = 2 # per corner point
+N_validation = 6
 
 alpha_range = (-4, 7, 0.5)
 J_range = (1.6, 2.4, 0.1)
@@ -82,17 +83,18 @@ def postprocess_matrix(path):
             main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
 
     # validation points
-    # alpha_v = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=N_validation)
-    # J_v = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=N_validation)
-    # delta_e_v = np.random.choice(np.arange(deltae_range[0], deltae_range[1] + deltae_range[2], deltae_range[2]), size=N_validation)
-    # V_v = np.full(N_validation, V_base)
-    # if np.all(delta_e_v == de_setting_0) or np.all(delta_e_v == de_setting_1):
-    #     print("WARNING: only one elevator setting in validation set")
-    # validation_points = np.vstack((alpha_v, J_v, delta_e_v, V_v))
-    # vp_b1 = validation_points[:, np.where(validation_points[2, :] == de_setting_0)[0]]
-    # main_block_one = np.concatenate((main_block_one, vp_b1), axis=1)
-    # vp_b2 = validation_points[:, np.where(validation_points[2, :] == de_setting_1)[0]]
-    # main_block_two = np.concatenate((main_block_two, vp_b2), axis=1)
+    alpha_v = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=N_validation)
+    J_v = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=N_validation)
+    delta_e_v = np.random.choice(np.arange(deltae_range[0], deltae_range[1] + deltae_range[2], deltae_range[2]), size=N_validation)
+    V_v = np.full(N_validation, V_base)
+    if np.all(delta_e_v == de_setting_0) or np.all(delta_e_v == de_setting_1):
+        print("WARNING: only one elevator setting in validation set")
+
+    validation_points = np.vstack((alpha_v, J_v, delta_e_v, V_v))
+    vp_b1 = validation_points[:, np.where(validation_points[2, :] == de_setting_0)[0]]
+    main_block_one = np.concatenate((main_block_one, vp_b1), axis=1)
+    vp_b2 = validation_points[:, np.where(validation_points[2, :] == de_setting_1)[0]]
+    main_block_two = np.concatenate((main_block_two, vp_b2), axis=1)
 
 
     indices_to_duplicate = np.where(
@@ -104,10 +106,10 @@ def postprocess_matrix(path):
     for k in indices_to_duplicate:
         column_to_duplicate = main_block_one[:, k]
         # Create two copies of the column
-        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_validation))
+        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetition))
         # Insert the duplicated columns right after the k'th column
         main_block_one = np.insert(main_block_one, k + 1, duplicated_columns.T, axis=1)
-        indices_to_duplicate += N_validation
+        indices_to_duplicate += N_repetition
 
 
     indices_to_duplicate = np.where(
@@ -119,10 +121,10 @@ def postprocess_matrix(path):
     for k in indices_to_duplicate:
         column_to_duplicate = main_block_two[:, k]
         # Create two copies of the column
-        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_validation))
+        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetition))
         # Insert the duplicated columns right after the k'th column
         main_block_two = np.insert(main_block_two, k + 1, duplicated_columns.T, axis=1)
-        indices_to_duplicate += N_validation
+        indices_to_duplicate += N_repetition
 
     wind_off_block = np.vstack(
         (
@@ -136,6 +138,7 @@ def postprocess_matrix(path):
 
     # alpha_Re = np.linspace(alpha_range[0], alpha_range[1], n_different_Re)
     # J_Re = np.linspace(J_range[0], J_range[1] , n_different_Re)
+
     alpha_Re = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=n_different_Re)
     J_Re = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=n_different_Re)
 
@@ -152,7 +155,7 @@ def postprocess_matrix(path):
         (wind_off_block, main_block_one, diff_re_block, main_block_two), axis=1
     )
 
-    alpha_acoustic = np.max(unique_alphas)
+    alpha_acoustic = unique_alphas[-1]
     where_acoustic = np.where(
         np.logical_and(
         np.logical_or(

@@ -21,6 +21,12 @@ V_inf_p = -1
 Acoustic_p = -1
 Time_p = -1
 n_block = 1
+block_names = iter([
+    "Wind-off Measurements",
+    "Main Block A",
+    "Re Comparison",
+    "Main Block B"
+])
 
 # Open the LaTeX file for writing
 with open(latex_file, 'w') as output_file:
@@ -36,18 +42,32 @@ with open(latex_file, 'w') as output_file:
         Time = row['Time']
         
         Time_hms = convert_seconds_to_hms(Time)
-    
+
         comment = ""
-        comment += "including acoustic measurement" if Acoustic == 1 else ""
-        if delta_e != delta_e_p:
-            comment += "change in elevator and tunnel setting"
-            output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
-            n_block +=1
-        elif V_inf != V_inf_p:
-            comment += "change in tunnel setting"
+
+        if index != 0:
+            comment += "including acoustic measurement" if Acoustic and not (AoA == AoA_p and J == J_p and delta_e == delta_e_p) else ""
+
+            if delta_e != delta_e_p:
+                comment += "change in elevator and tunnel setting"
+                block_name = next(block_names)
+                # output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block} - {block_name}}} \\\\ \\hline \n")
+                output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
+                n_block +=1
+            elif V_inf != V_inf_p:
+                comment += "change in tunnel setting"
+                block_name = next(block_names)
+                # output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block} - {block_name}}} \\\\ \\hline \n")
+                output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
+                n_block +=1
+        else:
+            block_name = next(block_names)
+            # output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block} - {block_name}}} \\\\ \\hline \n")
             output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
             n_block +=1
 
+        if AoA == AoA_p and J == J_p and delta_e == delta_e_p:
+            comment = "repetition point"
 
 
         rps = V_inf / J / D_prop if J != 0 else 0

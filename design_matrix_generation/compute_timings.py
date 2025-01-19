@@ -26,10 +26,10 @@ def timings(matrix):
 
     for index in range(matrix.shape[1]):
 
-        if matrix[4, index] == 1:
+        if index != 0 and (matrix[4, index] and  not matrix[4, index-1]):
             if matrix[3, index] == 40:
                 t_measurement = t_aeroacoustic_measurement_highpower
-            else:
+            elif matrix[3, index] == 20:
                 t_measurement = t_aeroacoustic_measurement_lowpower
         else:
             t_measurement = t_aerodynamic_measurement
