@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy import stats
 
 ## Function: calculate number of points required
-def n_points_required(alpha, beta, p, delta_certainty):
+def n_points_required(alpha, beta, p):
     """
     Calculate the number of points required for a given alpha, beta, p, and delta
     :param alpha: accepted probability of alpha-error
@@ -44,7 +44,6 @@ def n_points_required(alpha, beta, p, delta_certainty):
     print(f"alpha: {alpha}")
     print(f"beta: {beta}")
     print(f"p: {p}")
-    print(f"delta_certainty: {delta_certainty}")
     
     print(f"z_alpha: {z_alpha}")
     print(f"z_beta: {z_beta}")
@@ -55,4 +54,4 @@ def n_points_required(alpha, beta, p, delta_certainty):
     return n
 
 ## Run the function
-n = n_points_required(0.05, 0.01, 6, 0.05)
+# n = n_points_required(0.05, 0.01, 6, 0.05)

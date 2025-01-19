@@ -3,7 +3,7 @@ import numpy as np
 
 def experiment():
     # Loop over the number of samples
-    sample_sites = 5
+    sample_sites = 8
     n_sample = 3
 
     # Take a sample of n measurements: take 100 random samples from a normal distribution with mean 0 and standard deviation 1
@@ -49,14 +49,25 @@ if __name__ == "__main__":
     std_dev_single_site = []
     std_dev_diff_sites = []
     
-    for i in range(10000):
+    for i in range(100000):
         std_dev_single_site_, std_dev_diff_sites_ = experiment()
         std_dev_single_site.append(std_dev_single_site_)
         std_dev_diff_sites.append(std_dev_diff_sites_)
         
+    # Calculate the standard deviation of the standard deviations
+    stddev_std_dev_single_site = np.std(std_dev_single_site)
+    stddev_std_dev_diff_sites = np.std(std_dev_diff_sites)
+        
     # Calculate the mean of the standard deviations
     std_dev_single_site = np.mean(std_dev_single_site)
     std_dev_diff_sites = np.mean(std_dev_diff_sites)
+    
+    # Print the standard deviation of the standard deviations
+    print(f"Standard deviation of standard deviation of all samples at single site: {stddev_std_dev_single_site:.5f}")
+    print(f"Standard deviation of standard deviation based on different sites: {stddev_std_dev_diff_sites:.5f}")
+    
+    # Calculate the difference between the two means
+    diff = std_dev_single_site - std_dev_diff_sites
     
     # Print the mean standard deviations
     print(f"Mean standard deviation of all samples at single site: {std_dev_single_site}")
