@@ -7,8 +7,8 @@ alpha_rate = 0.5  # degrees per second
 t_change_prop = 15
 t_change_elevator = 10 * 60
 t_aerodynamic_measurement = 10
-# t_aeroacoustic_measurement= 60
-t_aeroacoustic_measurement= 20
+t_aeroacoustic_measurement_highpower = 10
+t_aeroacoustic_measurement_lowpower = 20
 t_human_operator = 10
 
 total_tunnel_time = 60 * 60 * 1.75  # 1:45 minutes
@@ -27,7 +27,10 @@ def timings(matrix):
     for index in range(matrix.shape[1]):
 
         if matrix[4, index] == 1:
-            t_measurement = t_aeroacoustic_measurement
+            if matrix[3, index] == 40:
+                t_measurement = t_aeroacoustic_measurement_highpower
+            else:
+                t_measurement = t_aeroacoustic_measurement_lowpower
         else:
             t_measurement = t_aerodynamic_measurement
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-points_per_block = 10 
+# points_per_block = 10
 de_setting_0 = 0  # starting setting
 de_setting_1 = 10
 obligatory_testpoints = [np.array([8, 1.6, 0, 40]).reshape(4, 1), np.array([8, 0, 0, 40]).reshape(4, 1)]
@@ -9,9 +9,15 @@ obligatory_testpoints = [np.array([8, 1.6, 0, 40]).reshape(4, 1), np.array([8, 0
 V_base = 40
 V_diff = 20
 
-n_different_Re = 10
+n_different_Re = 8
 
-np.random.seed(0)
+N_validation = 5
+
+alpha_range = (-5, 7, 1)
+J_range = (1.6, 2.4, 0.2)
+deltae_range = (0, 10, 10)
+
+np.random.seed(1)
 
 def shuffle_along_axis(a, axis):
     idx = np.random.rand(*a.shape).argsort(axis=axis)
@@ -59,11 +65,29 @@ def postprocess_matrix(path):
 
     # permuted_columns = np.random.permutation(main_block_two.shape[1])
     # main_block_two = main_block_two[:, permuted_columns]
+
+
     for obligatory_testpoint in obligatory_testpoints:
         if not np.any([np.all(main_block_one[:, index] == obligatory_testpoint.T) for index in range(main_block_one.shape[1])]):
             print('obligatory test point not included, appending an additional measurement point')
             main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
 
+    # validation points
+    alpha_v = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=N_validation)
+    J_v = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=N_validation)
+    delta_e_v = np.random.choice(np.arange(deltae_range[0], deltae_range[1] + deltae_range[2], deltae_range[2]), size=N_validation)
+    V_v = np.full(N_validation, V_base)
+
+    if np.all(delta_e_v == de_setting_0) or np.all(delta_e_v == de_setting_1):
+        print("WARNING: only one elevator setting in validation set")
+
+    validation_points = np.vstack((alpha_v, J_v, delta_e_v, V_v))
+
+    vp_b1 = validation_points[:, np.where(validation_points[2, :] == de_setting_0)[0]]
+    main_block_one = np.concatenate((main_block_one, vp_b1), axis=1)
+
+    vp_b2 = validation_points[:, np.where(validation_points[2, :] == de_setting_1)[0]]
+    main_block_two = np.concatenate((main_block_two, vp_b2), axis=1)
 
     wind_off_block = np.vstack(
         (
@@ -71,18 +95,33 @@ def postprocess_matrix(path):
         )
     )
 
-    n_sweep = main_block_one.shape[1] // n_different_Re
-    diff_re_block = main_block_one[:, ::n_sweep][:, :n_different_Re].copy()
-    diff_re_block[3, :] = np.full(diff_re_block.shape[1], V_diff)
+    # n_sweep = main_block_one.shape[1] // n_different_Re
+    # diff_re_block = main_block_one[:, ::n_sweep][:, :n_different_Re].copy()
+    # diff_re_block[3, :] = np.full(diff_re_block.shape[1], V_diff)
+
+    alpha_Re = np.linspace(alpha_range[0], alpha_range[1], n_different_Re)
+    J_Re = np.linspace(J_range[0], J_range[1] , n_different_Re)
+    delta_e_Re =np.full(n_different_Re, de_setting_0)
+    V_Re = np.full(n_different_Re, V_diff)
+
+    diff_re_block = np.vstack((alpha_Re, J_Re, delta_e_Re, V_Re))
+
+    # random permutation
+    permuted_columns = np.random.permutation(diff_re_block.shape[1])
+    diff_re_block = diff_re_block[:, permuted_columns]
 
     full_matrix = np.concatenate(
         (wind_off_block, main_block_one, diff_re_block, main_block_two), axis=1
     )
 
+    alpha_acoustic = np.max(unique_alphas)
     where_acoustic = np.where(
-        np.logical_and(
-            full_matrix[0, :] == obligatory_testpoint[0],
-            full_matrix[2, :] == de_setting_0
+        np.logical_or(
+            np.logical_and(
+                full_matrix[0, :] == alpha_acoustic,
+                full_matrix[2, :] == de_setting_0
+            ),
+            np.any(tuple(np.all(np.equal(full_matrix, obligatory_testpoints[i]), axis=0) for i in range(len(obligatory_testpoints))), axis=0)
         )
     )[0]
 
@@ -97,6 +136,10 @@ def postprocess_matrix(path):
     return full_matrix
 
 if __name__ == "__main__":
+    # uncomment when using pycharm
+    import os
+
+    os.chdir('..')
 
     path = "design_matrix_generation/raw_test_matrix.csv"
 
