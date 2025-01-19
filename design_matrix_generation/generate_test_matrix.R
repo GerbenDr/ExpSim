@@ -9,12 +9,12 @@ library(AlgDesign)
 # Factor: Alpha (Angle of Attack)
 alpha_L = -4
 alpha_U = 7
-alpha_stepsize = 0.1
+alpha_stepsize = 0.01
 
 # Factor: J (Advance Ratio)
 J_L = 1.8
 J_U = 2.2
-J_stepsize = 0.02
+J_stepsize = 0.01
 
 # Factor: delta_e (Elevator Deflection)
 # NOTE: delta_e is a binary factor, so we only need to specify the levels
