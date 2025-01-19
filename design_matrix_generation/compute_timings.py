@@ -75,9 +75,9 @@ def timings(matrix):
 
 if __name__ == "__main__":
 
-    # uncomment when using pycharm
-    import os
-    os.chdir('..')
+    # # uncomment when using pycharm
+    # import os
+    # os.chdir('..')
 
     path = "design_matrix_generation/raw_test_matrix.csv"
 

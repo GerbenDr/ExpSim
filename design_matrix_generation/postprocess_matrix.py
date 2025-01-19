@@ -99,8 +99,11 @@ def postprocess_matrix(path):
     # diff_re_block = main_block_one[:, ::n_sweep][:, :n_different_Re].copy()
     # diff_re_block[3, :] = np.full(diff_re_block.shape[1], V_diff)
 
-    alpha_Re = np.linspace(alpha_range[0], alpha_range[1], n_different_Re)
-    J_Re = np.linspace(J_range[0], J_range[1] , n_different_Re)
+    # alpha_Re = np.linspace(alpha_range[0], alpha_range[1], n_different_Re)
+    # J_Re = np.linspace(J_range[0], J_range[1] , n_different_Re)
+    alpha_Re = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=n_different_Re)
+    J_Re = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=n_different_Re)
+
     delta_e_Re =np.full(n_different_Re, de_setting_0)
     V_Re = np.full(n_different_Re, V_diff)
 
@@ -137,9 +140,9 @@ def postprocess_matrix(path):
 
 if __name__ == "__main__":
     # uncomment when using pycharm
-    import os
+    # import os
 
-    os.chdir('..')
+    # os.chdir('..')
 
     path = "design_matrix_generation/raw_test_matrix.csv"
 
