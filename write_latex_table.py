@@ -14,9 +14,18 @@ D_prop = 0.2032  # m
 def convert_seconds_to_hms(seconds):
     return str(timedelta(seconds=seconds))
 
+AoA_p = -1
+J_p = -1
+delta_e_p = -1
+V_inf_p = -1
+Acoustic_p = -1
+Time_p = -1
+n_block = 1
+
 # Open the LaTeX file for writing
 with open(latex_file, 'w') as output_file:
-    
+    # output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
+    # n_block +=1
     # Loop through each row in the DataFrame and create the LaTeX rows
     for index, row in df.iterrows():
         AoA = row['AoA']
@@ -27,11 +36,29 @@ with open(latex_file, 'w') as output_file:
         Time = row['Time']
         
         Time_hms = convert_seconds_to_hms(Time)
-        # Determine the comment based on the Acoustic value
-        comment = "acoustic" if Acoustic == 1 else "N/A"
+    
+        comment = ""
+        comment += "including acoustic measurement" if Acoustic == 1 else ""
+        if delta_e != delta_e_p:
+            comment += "change in elevator and tunnel setting"
+            output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
+            n_block +=1
+        elif V_inf != V_inf_p:
+            comment += "change in tunnel setting"
+            output_file.write(f"\\multicolumn{{7}}{{|c|}}{{Block {n_block}}} \\\\ \\hline \n")
+            n_block +=1
+
+
 
         rps = V_inf / J / D_prop if J != 0 else 0
-        Jstring = str(J) if J!=0 else "N/A"
+        Jstring = f"{J:.2f}" if J!=0 else "N/A"
         
         # Write the row to the LaTeX file
         output_file.write(f"{index+1} & {V_inf:.0f} & {rps:.2f} ({Jstring}) & {AoA:.1f} &{delta_e:.1f} & {Time_hms} & {comment} \\\\ \\hline \n")
+
+        AoA_p = AoA
+        J_p = J
+        delta_e_p = delta_e
+        V_inf_p = V_inf
+        Acoustic_p = Acoustic
+        Time_p = Time

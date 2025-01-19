@@ -8,23 +8,23 @@ library(AlgDesign)
 
 # Factor: Alpha (Angle of Attack)
 alpha_L = -4
-alpha_U = 8
-alpha_stepsize = 1.0
+alpha_U = 7
+alpha_stepsize = 0.5
 
 # Factor: J (Advance Ratio)
 J_L = 1.6
 J_U = 2.4
-J_stepsize = 0.2
+J_stepsize = 0.1
 
 # Factor: delta_e (Elevator Deflection)
 # NOTE: delta_e is a binary factor, so we only need to specify the levels
-delta_e_L = 0
+delta_e_L = -10
 delta_e_U = 10
 
 # --------------------------------------------------------------------------------------------
 
 ## Specify the number of test points
-number_of_trials = 52
+number_of_trials = 2.3 * 20
 
 # --------------------------------------------------------------------------------------------
 
