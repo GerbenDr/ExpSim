@@ -51,20 +51,20 @@ def postprocess_matrix(path):
     )
 
     # pair-wise randomization
-    pairs = main_block_one.reshape(4, main_block_one.shape[1] // 2, 2)  # Shape becomes (4, N//2, 2)
-    permuted_pairs = pairs[:, np.random.permutation(pairs.shape[1]), :]
-    main_block_one = permuted_pairs.reshape(4, main_block_one.shape[1])
+    # pairs = main_block_one.reshape(4, main_block_one.shape[1] // 2, 2)  # Shape becomes (4, N//2, 2)
+    # permuted_pairs = pairs[:, np.random.permutation(pairs.shape[1]), :]
+    # main_block_one = permuted_pairs.reshape(4, main_block_one.shape[1])
 
-    pairs = main_block_two.reshape(4, main_block_two.shape[1] // 2, 2)  # Shape becomes (4, N//2, 2)
-    permuted_pairs = pairs[:, np.random.permutation(pairs.shape[1]), :]
-    main_block_two = permuted_pairs.reshape(4, main_block_two.shape[1])
+    # pairs = main_block_two.reshape(4, main_block_two.shape[1] // 2, 2)  # Shape becomes (4, N//2, 2)
+    # permuted_pairs = pairs[:, np.random.permutation(pairs.shape[1]), :]
+    # main_block_two = permuted_pairs.reshape(4, main_block_two.shape[1])
 
     # # random permutation
-    # permuted_columns = np.random.permutation(main_block_one.shape[1])
-    # main_block_one = main_block_one[:, permuted_columns]
+    permuted_columns = np.random.permutation(main_block_one.shape[1])
+    main_block_one = main_block_one[:, permuted_columns]
 
-    # permuted_columns = np.random.permutation(main_block_two.shape[1])
-    # main_block_two = main_block_two[:, permuted_columns]
+    permuted_columns = np.random.permutation(main_block_two.shape[1])
+    main_block_two = main_block_two[:, permuted_columns]
 
 
     for obligatory_testpoint in obligatory_testpoints:
