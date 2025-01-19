@@ -48,9 +48,11 @@ start <- Sys.time()
 # First, the polynomial is specified
 # Second, the data (candidates specified above) is specified
 # Third, the criterion is specified (I-criterion)
-# Fourth, the number of trials is specified (100)
+# Fourth, the number of trials is specified (x number of test points)
+
+# Generate the optimal test matrix
 design <- optFederov(
-  ~ poly(alpha, 3) + poly(J, 3) + poly(delta_e, 1) + poly(alpha, 2):poly(J, 2) + poly(alpha, 2):delta_e + poly(J, 2):delta_e,
+  ~ 1 + I(alpha) + I(J) + I(delta_e) + I(alpha^2) + I(J^2) + I(alpha^3) + I(J^3) + I(alpha*J) + I(alpha*delta_e) + I(J*delta_e) + I(alpha^2*J) + I(alpha^2*delta_e) + I(J^2*alpha) + I(J^2*delta_e) + I(alpha*J*delta_e) + I(alpha^2*J^2) + I(alpha^2*J*delta_e) + I(alpha*J^2*delta_e) + I(alpha^2*J^2*delta_e),
   data = candidates,
   criterion = "I",
   nTrials = number_of_trials
