@@ -46,7 +46,12 @@ with open(latex_file, 'w') as output_file:
         comment = ""
 
         if index != 0:
-            comment += "including acoustic measurement" if Acoustic and not (AoA == AoA_p and J == J_p and delta_e == delta_e_p) else ""
+            if Acoustic == 1 and not (AoA == AoA_p and J == J_p and delta_e == delta_e_p):
+                comment += "including acoustic measurement"
+            elif Acoustic == 2:
+                comment += "validation point"
+            else:
+                comment += ""
 
             if delta_e != delta_e_p:
                 comment += "change in elevator and tunnel setting"

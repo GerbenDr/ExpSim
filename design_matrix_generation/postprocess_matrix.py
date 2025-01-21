@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from itertools import product
+import validation_points_2
 
 # points_per_block = 10
 de_setting_0 = -10  # starting setting
@@ -83,10 +84,18 @@ def postprocess_matrix(path):
             main_block_one = np.concatenate((main_block_one, obligatory_testpoint), axis=1)
 
     # validation points
-    alpha_v = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=N_validation)
-    J_v = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=N_validation)
-    delta_e_v = np.random.choice(np.arange(deltae_range[0], deltae_range[1] + deltae_range[2], deltae_range[2]), size=N_validation)
+    # alpha_v = np.random.choice(np.arange(alpha_range[0], alpha_range[1] + alpha_range[2], alpha_range[2]), size=N_validation)
+    # J_v = np.random.choice(np.arange(J_range[0], J_range[1] + J_range[2], J_range[2]), size=N_validation)
+    # delta_e_v = np.random.choice(np.arange(deltae_range[0], deltae_range[1] + deltae_range[2], deltae_range[2]), size=N_validation)
+    # Generate validation points from original matrix
+    v_points = validation_points_2.get_validation_points(N_validation, plot=False)
+    v_points = np.array(v_points)
+    
+    alpha_v = v_points[:, 0]
+    J_v = v_points[:, 1]
+    delta_e_v = v_points[:, 2]
     V_v = np.full(N_validation, V_base)
+    
     if np.all(delta_e_v == de_setting_0) or np.all(delta_e_v == de_setting_1):
         print("WARNING: only one elevator setting in validation set")
 
@@ -106,10 +115,10 @@ def postprocess_matrix(path):
     for k in indices_to_duplicate:
         column_to_duplicate = main_block_one[:, k]
         # Create two copies of the column
-        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetition))
+        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetitions))
         # Insert the duplicated columns right after the k'th column
         main_block_one = np.insert(main_block_one, k + 1, duplicated_columns.T, axis=1)
-        indices_to_duplicate += N_repetition
+        indices_to_duplicate += N_repetitions
 
 
     indices_to_duplicate = np.where(
@@ -121,10 +130,10 @@ def postprocess_matrix(path):
     for k in indices_to_duplicate:
         column_to_duplicate = main_block_two[:, k]
         # Create two copies of the column
-        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetition))
+        duplicated_columns = np.tile(column_to_duplicate[:, np.newaxis], (1, N_repetitions))
         # Insert the duplicated columns right after the k'th column
         main_block_two = np.insert(main_block_two, k + 1, duplicated_columns.T, axis=1)
-        indices_to_duplicate += N_repetition
+        indices_to_duplicate += N_repetitions
 
     wind_off_block = np.vstack(
         (
@@ -176,7 +185,14 @@ def postprocess_matrix(path):
     bool_array[where_acoustic] = True
 
     full_matrix = np.vstack([full_matrix, bool_array])
-
+    
+    # Where the design points match the validation points, set the acoustic value to 2
+    for i in range(N_validation):
+        where_validation = np.where(
+            np.all(full_matrix[:4, :] == validation_points[:, i].reshape(4, 1), axis=0)
+        )[0]
+        full_matrix[4, where_validation] = 2
+    
     return full_matrix
 
 if __name__ == "__main__":
