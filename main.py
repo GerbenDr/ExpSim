@@ -7,10 +7,10 @@ import BoundaryCorrections as bc
 ## This is the data as outputted by the Matlab scripts (Lucille's code)
 # ---------------------------------------------------------------------
 # Read the data from the minus 10 run
-df_minus_10 = pd.read_csv('tunnel_data/uncorrected_elevator_minus_10', delimiter = '\t')
+df_minus_10 = pd.read_csv('tunnel_data_unc/uncorrected_elevator_minus_10.txt', delimiter = '\t')
 
 # Read the data from the plus 10 run
-df_plus_10 = pd.read_csv('tunnel_data/uncorrected_elevator_10', delimiter = '\t')
+df_plus_10 = pd.read_csv('tunnel_data_unc/uncorrected_elevator10.txt', delimiter = '\t')
 
 # Combine the data and add a column for the elevator angle
 df_minus_10['delta_e'] = -10
@@ -18,27 +18,25 @@ df_plus_10['delta_e'] = 10
 df_unc = pd.concat([df_minus_10, df_plus_10])
 
 # Save the combined data
-df_unc.to_csv('tunnel_data/combined_data.txt', sep = '\t', index = False)
-
-# ---------------------------------------------------------------------
-# TODO: If we need to "filter" the uncorrected data more, we can do this here...
-# ---------------------------------------------------------------------
+df_unc.to_csv('tunnel_data_unc/combined_data.txt', sep = '\t', index = False)
 
 # ---------------------------------------------------------------------
 # Read the data from the uncorrected tail-off run
 # ---------------------------------------------------------------------
-df_less_tail_unc = pd.read_csv('tunnel_data/uncorrected_tailoff.txt', delimiter = '\t')
-
+df_less_tail_unc = pd.read_csv('tunnel_data_unc/uncorrected_tailoff.txt', delimiter = '\t')
 
 ## ---------------------------------------------------------------------
-## BEFORE CORRECTIONS: Thrust/Drag Accounting, Subtracting Support Loads
+## BEFORE CORRECTIONS: Support Load Subtraction
 ## ---------------------------------------------------------------------
-# Thrust/Drag Accounting: Calculate the thrust and update the drag coefficients
-# TODO: This has to be implemented using Remco's code.
-
 # Support Load Subtraction: Subtract the strut loads from the uncorrected
 # using the data provided for the model-less run.
 # TODO: Import correct data from the model-less run and implement this.
+
+## ---------------------------------------------------------------------
+## BEFORE CORRECTIONS: Thrust/Drag Accounting
+## ---------------------------------------------------------------------
+# Thrust/Drag Accounting: Calculate the thrust and update the drag coefficients
+# TODO: This has to be implemented using Remco's code.
 
 
 ## ---------------------------------------------------------------------
@@ -50,6 +48,39 @@ df = bc.apply_total_blockage_corrections(df_unc)
 ## Apply the lift-interference corrections
 ## ---------------------------------------------------------------------
 df = bc.apply_lift_interference_corrections(df, df_less_tail_unc)
+
+## ---------------------------------------------------------------------
+## Write the corrected data to a file
+## ---------------------------------------------------------------------
+df.to_csv('tunnel_data_cor/corrected_data.txt', sep = '\t', index = False)
+## ---------------------------------------------------------------------
+
+## ---------------------------------------------------------------------
+## Create the response surface model
+## ---------------------------------------------------------------------
+# TODO: exclude points that are not relevant for the response surface model
+# TODO: create the response surface model
+
+## ---------------------------------------------------------------------
+## Extract relevant parameters from response surface model
+## ---------------------------------------------------------------------
+# TODO
+
+## ---------------------------------------------------------------------
+## Calculate standard deviation of measurements
+## ---------------------------------------------------------------------
+# TODO
+
+## ---------------------------------------------------------------------
+## Validation Points
+## ---------------------------------------------------------------------
+# TODO
+
+## ---------------------------------------------------------------------
+## Create relevant plots
+## ---------------------------------------------------------------------
+# TODO
+
 
 
 
