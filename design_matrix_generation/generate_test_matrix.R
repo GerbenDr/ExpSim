@@ -9,22 +9,22 @@ library(AlgDesign)
 # Factor: Alpha (Angle of Attack)
 alpha_L = -4
 alpha_U = 7
-alpha_stepsize = 0.1
+alpha_stepsize = 0.5
 
 # Factor: J (Advance Ratio)
-J_L = 1.8
-J_U = 2.2
-J_stepsize = 0.02
+J_L = 1.6
+J_U = 2.4
+J_stepsize = 0.1
 
 # Factor: delta_e (Elevator Deflection)
 # NOTE: delta_e is a binary factor, so we only need to specify the levels
-delta_e_L = 0
+delta_e_L = -10
 delta_e_U = 10
 
 # --------------------------------------------------------------------------------------------
 
 ## Specify the number of test points
-number_of_trials = 100
+number_of_trials = 2.3 * 20
 
 # --------------------------------------------------------------------------------------------
 
@@ -36,6 +36,10 @@ candidates <- expand.grid(
 )
 
 # --------------------------------------------------------------------------------------------
+set.seed(123)  # For reproducibility
+# block_labels <- rep(paste0("Block ", 1:(number_of_trials / 10)), each = 10)
+# candidates <- candidates[1:length(block_labels), ]  # Limit to the required number of trials
+# candidates$block <- block_labels
 
 # Check the time it takes: start a timer
 start <- Sys.time()
@@ -44,13 +48,17 @@ start <- Sys.time()
 # First, the polynomial is specified
 # Second, the data (candidates specified above) is specified
 # Third, the criterion is specified (I-criterion)
-# Fourth, the number of trials is specified (100)
+# Fourth, the number of trials is specified (x number of test points)
+
+# Generate the optimal test matrix
 design <- optFederov(
-  ~ poly(alpha, 3) + poly(J, 3) + poly(delta_e, 1) + J:alpha,
+  ~ 1 + I(alpha) + I(J) + I(delta_e) + I(alpha^2) + I(J^2) + I(alpha^3) + I(J^3) + I(alpha*J) + I(alpha*delta_e) + I(J*delta_e) + I(alpha^2*J) + I(alpha^2*delta_e) + I(J^2*alpha) + I(J^2*delta_e) + I(alpha*J*delta_e) + I(alpha^2*J^2) + I(alpha^2*J*delta_e) + I(alpha*J^2*delta_e) + I(alpha^2*J^2*delta_e),
   data = candidates,
   criterion = "I",
   nTrials = number_of_trials
 )
+
+
 
 # Check the time it takes: stop the timer
 end <- Sys.time()
