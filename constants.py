@@ -15,12 +15,16 @@ TAU1_FUSELAGE = 0.865 # - tunnel/model factor, b=0 for body of revolution
 V_AFTSTRUT = 0.0004491 # m^3
 T_OVER_C_AFTSTRUT = 0.2 # - (t/c) ratio taken from section A-A of the drawing of the aft strut
 K1_AFTSTRUT = 1.082 # - aft strut shape factor, according to NACA 4-digit airfoil and given t/c ratio
-TAU1_AFTSTRUT  = 0.836 # - tunnel/model factor, based on strut being 0.46/0.89 = 0.516 of the tunnel height when it's attached to the centerline of the fuselage.
+TAU1_AFTSTRUT  = 0.836 # - tunnel/model factor, based on strut being 0.46/0.89 = 0.516 of the tunnel height when it's attached to the centerline of the fuselage. Assuming B/H=1
 
 # Wing Strut Parameters
 V_WINGSTRUTS = 0.0035296 # m^3, both together
-
-# TODO: Account for blockage of struts, apply extrapolation
+L_WINGSTRUTS = 0.61 # m
+T_OVER_C_WINGSTRUTS = 5/19 # - (t/c) ratio taken from the CATPart, this is the thickes part of the wing strut, that which makes up most of the strut
+# The wing strut has a t/c ratio of 18/40 at the smaller part of the strut.
+# Modeling it as a NACA 4-digit airfoil
+K1_WINGSTRUTS = 1.13 # - wing strut shape factor, according to NACA 4-digit airfoil and given t/c ratio
+TAU1_WINGSTRUTS = 0.836 # - tunnel/model factor, based on strut being 0.46/0.89 = 0.516 of the tunnel height when it's attached to the centerline of the fuselage. Assuming B/H=1
 
 # Wing Parameters
 V_WING = 0.0030229 # m^3

@@ -143,7 +143,7 @@ def calculate_solid_blockage_corrections(df, tail_on=True):
     epsilon_sbrs = c.K1_AFTSTRUT * c.TAU1_AFTSTRUT * c.V_AFTSTRUT / (c.C_TUNNEL**(3/2))
     
     # Wing Struts
-    
+    epsilon_sbws = 2 * (c.K1_WINGSTRUTS * c.TAU1_WINGSTRUTS * c.V_WINGSTRUTS / (c.C_TUNNEL**(3/2)))
 
     if tail_on:
         # Horizontal Tail
@@ -160,7 +160,7 @@ def calculate_solid_blockage_corrections(df, tail_on=True):
         epsilon_sbn = 0
 
     # Total Solid Blockage
-    epsilon_sb = epsilon_sbf + epsilon_sbw + epsilon_sbht + epsilon_sbn + epsilon_sbvt
+    epsilon_sb = epsilon_sbf + epsilon_sbw + epsilon_sbht + epsilon_sbn + epsilon_sbvt + epsilon_sbrs + epsilon_sbws
 
     # Add the epsilon_sb column to the dataframe
     df['epsilon_sb'] = epsilon_sb
