@@ -99,7 +99,7 @@ class ResponseSurfaceModel:
     def plot_RSM(self, reference_dataframe=None, key='CL', save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=3, tolj=0.3):
         """
         plot a 2D slice of the response surface model
-        you MUST set at least one of DELTA_E, AOA, or J to a value (default is DELTA_E=-10DEG)
+        you MUST set at least one of DELTA_E, AOA, or J to a value
         can add a reference data as a scatterplot
         """
         if all([DELTA_E is None, AOA is None, J is None]):
@@ -160,9 +160,10 @@ if __name__ == "__main__":
     coeff, res = rsm.fit()
     print(coeff, res)
 
-    rsm.plot_RSM(key='CMpitch', DELTA_E=-10, save=True, reference_dataframe='self')
-    rsm.plot_RSM(key='CMpitch', AOA=7, save=True, reference_dataframe='self')
-    rsm.plot_RSM(key='CMpitch', J=1.8, save=True, reference_dataframe='self')
+    for key in ['CL', 'CD', 'CMpitch']:
+        rsm.plot_RSM(key=key, DELTA_E=-10, save=True, reference_dataframe='self')
+        rsm.plot_RSM(key=key, AOA=7, save=True, reference_dataframe='self')
+        rsm.plot_RSM(key=key, J=1.8, save=True, reference_dataframe='self')
 
 
     # print(rsm.predict(df))
