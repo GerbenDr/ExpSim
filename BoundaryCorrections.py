@@ -110,8 +110,14 @@ def get_CL_alpha_curve_less_tail(df, V, visualise = False, exception_run=False):
 ## Obtain CM-alpha curve for the tail: change in aircraft moment coefficient with tail angle of attack.
 def get_CM_alpha_curve_tail():
     
-    #TODO: check this method. I am not so sure, it is an intuitive guess.
-    CL_alpha_tail = 2*np.pi # This is a guess, but it is a good guess. It is the lift curve slope of the tail.
+    a0 = 2*np.pi # This is a guess, but it is a good guess. It is the lift curve slope of the tail.
+
+    AR_TAIL = c.B_HTAIL / c.TAIL_CHORD # Aspect ratio of the tail
+
+    a_3d_corrected = a0 / (1+a0 / np.pi / AR_TAIL)
+
+    CL_alpha_tail = a_3d_corrected * np.pi /180
+
     CM_alpha_tail = -CL_alpha_tail * c.TAILARM / c.C_WING # This is the moment curve slope of the tail.    
     
     return CM_alpha_tail
