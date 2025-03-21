@@ -111,6 +111,58 @@ def get_CM_alpha_curve_tail():
     CM_alpha_tail = -CL_alpha_tail * c.TAILARM / c.C_WING # This is the moment curve slope of the tail.    
     
     return CM_alpha_tail
+
+## Subtract the model-off data from the uncorrected dataset
+def subtract_model_off_data(df_unc, df_model_off):
+    """
+    Subtract the model-off data from the uncorrected dataset.
+    This function subtracts the model-off data from the uncorrected dataset to account for 
+    the support loads. The corrected dataset is then returned.
+    Parameters:
+    df_unc (pandas.DataFrame): The uncorrected dataset.
+    df_model_off (pandas.DataFrame): The model-off dataset.
+    Returns:
+    pandas.DataFrame: The corrected dataset.
+    """
+    
+    # The df_model_off data only has data for a set of anles of attack.
+    # It needs to be interpolated for each row in df_unc to apply the correction on CL, CD, Cy, CMpitch, CMpitch, and CMyaw.
+    # For each row in df_unc, find the two closest angles of attack in df_model_off.
+    # Then, interpolate the model-off data (CL, CD, Cy, CMpitch, CMpitch, and CMyaw) linearly between these two angles of attack.
+    # Finally, subtract this interpolated model-off data from the uncorrected data.
+    
+    # Create an empty dataframe to store the model-off data interpolated for each row in df_unc
+    df_model_off_interpolated = pd.DataFrame(columns = df_model_off.columns)
+    
+    # Iterate over each row in df_unc
+    for index, row in df_unc.iterrows():
+        
+        # Find the two closest angles of attack in df_model_off
+        upper = df_model_off[df_model_off['AoA'] >= row['AoA']].iloc[0]
+        lower = df_model_off[df_model_off['AoA'] < row['AoA']].iloc[-1] if not df_model_off[df_model_off['AoA'] < row['AoA']].empty else df_model_off.iloc[0]
+        
+        # Interpolate the model-off data linearly between these two angles of attack
+        # Calculate the interpolation factor
+        factor = (row['AoA'] - lower['AoA']) / (upper['AoA'] - lower['AoA'])
+        
+        # Interpolate the model-off data
+        interpolated = lower + factor * (upper - lower)
+        
+        # Append the interpolated data to the dataframe
+        df_model_off_interpolated = pd.concat([df_model_off_interpolated, interpolated.to_frame().T], ignore_index=True)
+                
+    # Reset the df_unc index
+    df_unc = df_unc.reset_index(drop=True)
+
+    # Subtract the interpolated model-off data from the uncorrected data for each component
+    df_unc['CL'] = df_unc['CL'] - df_model_off_interpolated['CL']
+    df_unc['CD'] = df_unc['CD'] - df_model_off_interpolated['CD']
+    df_unc['CY'] = df_unc['CY'] - df_model_off_interpolated['Cy']
+    df_unc['CMroll'] = df_unc['CMroll'] - df_model_off_interpolated['CMroll']
+    df_unc['CMpitch'] = df_unc['CMpitch'] - df_model_off_interpolated['CMpitch']
+    df_unc['CMyaw'] = df_unc['CMyaw'] - df_model_off_interpolated['CMyaw']
+            
+    return df_unc
     
 ## Method to apply the solid blockage corrections
 def calculate_solid_blockage_corrections(df, tail_on=True):
@@ -286,7 +338,8 @@ def apply_total_blockage_corrections(df, tail_on=True):
     CD_cor1 = df['CD'] / (1 + epsilon_total)**2
     
     # Corrected moment coefficient
-    CM_cor1 = df['CM'] / (1 + epsilon_total)**2
+    # TODO: check the correct CM column name i.e. quarter-chord or not
+    CM_cor1 = df['CMpitch'] / (1 + epsilon_total)**2
     
     # Add the epsilon_total, V_corr, and q_corcolumns to the dataframe
     df['epsilon_total'] = epsilon_total
@@ -294,7 +347,7 @@ def apply_total_blockage_corrections(df, tail_on=True):
     df['q_cor'] = q_cor
     df['CL_cor1'] = CL_cor1
     df['CD_cor1'] = CD_cor1
-    df['CM_cor1'] = CM_cor1
+    df['CMpitch_cor1'] = CM_cor1
     
     return df
 
@@ -337,17 +390,17 @@ def apply_lift_interference_correction(df, df_less_tail):
     delta_CM_total = delta_CM_upwash + delta_CM_tail
     
     # Calculate the corrected moment coefficient
-    CM_cor2 = df['CM_cor1'] + delta_CM_total
+    CM_cor2 = df['CMpitch_cor1'] + delta_CM_total
     
     # Add the delta_alpha_total, delta_CDw, and AoA_corcolumns to the dataframe
     df['delta_alpha_total'] = delta_alpha_total
     df['delta_CL'] = 0 # No correction for lift coefficient
     df['delta_CDw'] = delta_CDw
-    df['delta_CM_total'] = delta_CM_total
+    df['delta_CMpitch_total'] = delta_CM_total
     df['AoA_cor'] = alpha_cor
     df['CL_cor2'] = df['CL_cor1'] # No correction for lift coefficient
     df['CD_cor2'] = CD_cor2
-    df['CM_cor2'] = CM_cor2
+    df['CMpitch_cor2'] = CM_cor2
     
     return df    
     

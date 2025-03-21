@@ -33,7 +33,10 @@ df_less_tail_unc = pd.read_csv('tunnel_data_unc/uncorrected_tailoff.txt', delimi
 ## ---------------------------------------------------------------------
 # Support Load Subtraction: Subtract the strut loads from the uncorrected
 # using the data provided for the model-less run.
-# TODO: Import correct data from the model-less run and implement this.
+df_less_model = pd.read_csv('model_off_data/modelOffData_condensed.csv', delimiter = ',')
+df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
+df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
+# TODO: CMpitch and CMpitch25c are now different, might need to also apply the correction to the 25c data
 
 ## ---------------------------------------------------------------------
 ## BEFORE CORRECTIONS: Thrust/Drag Accounting
