@@ -55,7 +55,7 @@ df = bc.apply_total_blockage_corrections(df_unc)
 ## ---------------------------------------------------------------------
 ## Apply the lift-interference corrections
 ## ---------------------------------------------------------------------
-df = bc.apply_lift_interference_corrections(df, df_less_tail_unc)
+df = bc.apply_lift_interference_correction(df, df_less_tail_unc)
 
 ## ---------------------------------------------------------------------
 ## Write the corrected data to a file
