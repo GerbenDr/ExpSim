@@ -48,6 +48,7 @@ T_OVER_C_HTAIL = 0.15 # - (t/c) ratio for NACA 64(2)-015A airfoil
 K1_HTAIL = 1.019 # - horizontal tail shape factor (based on 64-series NACA airfoil and given t/c ratio)
 TAU1_HTAIL = 0.863 # - tunnel/model factor
 TAILARM = 0.535 # m quarter chord to quarter chord distance
+TAIL_CHORD = 0.9 * C_WING # m
 
 # Engine Nacelle Parameters
 # Volume of nacelle is already included in the horizontal tail parameter section above
