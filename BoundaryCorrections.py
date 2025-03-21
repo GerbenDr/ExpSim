@@ -63,18 +63,22 @@ def get_drag_polar(df, visualise = False):
 
 ## Obtain CL-alpha curve for the aircraft-less-tail configuration
 # This curve is used to calculate the wing lift coefficient for the lift-interference correction
-def get_CL_alpha_curve_less_tail(df, V, visualise = False):
+def get_CL_alpha_curve_less_tail(df, V, visualise = False, exception_run=False):
     
     # Filter the data to only include the measurements at V m/s +/- 1%
-    df_V_unc = df[(df['V'] >= 0.99*V) & (df['V'] <= 1.01*V)]
+    df_V = df[(df['V'] >= 0.99*V) & (df['V'] <= 1.01*V)]
     
-    # Apply the solid blockage and wake corrections to the tail-off data
-    # NOTE: No lift interference corrections are applied... This is an assumption to explain. Or could potentially still include it but it would be slighlty messy.
-    # Note that the blockage now does not include the horizontal tail, engine nacelles, vertical tail, and slipstream blockage
-    df_V = apply_total_blockage_corrections(df_V_unc, tail_on = False)
+    # Apply the lift interference and blockage correction to the tail-off data
+    if not exception_run:
+        # Apply the solid blockage and wake corrections to the tail-off data
+        # Note that the blockage now does not include the horizontal tail, engine nacelles, vertical tail, and slipstream blockage
+        df_V = apply_total_blockage_corrections(df_V, tail_on = False)
+    
+        # Apply the lift interference correction
+        df_V = apply_lift_interference_correction_less_tail(df_V)
     
     # Fit a third order polynomial to the data
-    p = np.polyfit(df_V['AoA'], df_V['CL_cor1'], 3)
+    p = np.polyfit(df_V['AoA'], df_V['CL_cor2'], 3)
     
     # Extract the coefficients
     a = p[0]
@@ -93,7 +97,7 @@ def get_CL_alpha_curve_less_tail(df, V, visualise = False):
         # Plot the CL-alpha curve
         plt.figure()
         plt.plot(AoA_range, CL_range, label = 'CL-alpha Curve Fit')
-        plt.scatter(df_V['AoA'], df_V['CL_cor1'], label = 'Measured Data')
+        plt.scatter(df_V['AoA'], df_V['CL_cor2'], label = 'Measured Data')
         plt.xlabel('AoA')
         plt.ylabel('CL')
         plt.title('CL-alpha Curve')
@@ -361,7 +365,7 @@ def apply_total_blockage_corrections(df, tail_on=True):
 def apply_lift_interference_correction(df, df_less_tail):
     
     # Calculate the AoA correction due to upwash
-    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, 40, visualise = False)
+    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, 40, visualise = False, exception_run=False)
     a, b, c, d = CL_alpha_wing_poly
     CL_WING = a * df['AoA']**3 + b * df['AoA']**2 + c * df['AoA'] + d
     delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
@@ -409,4 +413,49 @@ def apply_lift_interference_correction(df, df_less_tail):
     df['CMpitch_cor2'] = CM_cor2
     
     return df    
+
+## Method to apply the lift-interference correction for tail-off configuration
+def apply_lift_interference_correction_less_tail(df_less_tail):
     
+    # Calculate the AoA correction due to upwash
+    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, 40, visualise = False, exception_run=True)
+    a, b, c, d = CL_alpha_wing_poly
+    CL_WING = a * df_less_tail['AoA']**3 + b * df_less_tail['AoA']**2 + c * df_less_tail['AoA'] + d
+    delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
+    
+    # Calculate the AoA correction due to upwash gradient
+    delta_alpha_upwash_gradient = c.TAU2_HALFCHORD * delta_alpha_upwash
+    
+    # Calculate the total AoA correction
+    delta_alpha_total = delta_alpha_upwash + delta_alpha_upwash_gradient
+    
+    # Calculate the corrected angle of attack
+    alpha_cor = df_less_tail['AoA'] + delta_alpha_total
+    
+    # Calculate the drag coefficient correction due to the change in AoA
+    delta_CDw = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING**2
+    
+    # Calculate the corrected drag coefficient
+    CD_cor2 = df_less_tail['CD_cor1'] + delta_CDw
+    
+    # Calculate the moment coefficient correction due to upwash
+    # NOTE: CL_alpha of the wing is assumed to be needed here, not aircraft CL-Alpha.
+    delta_CM_upwash = 1 / 8 * delta_alpha_upwash_gradient * CL_alpha_wing_poly[2]
+    
+    # Calculate the total moment coefficient correction
+    delta_CM_total = delta_CM_upwash
+    
+    # Calculate the corrected moment coefficient
+    CM_cor2 = df_less_tail['CMpitch_cor1'] + delta_CM_total
+    
+    # Add the delta_alpha_total, delta_CDw, and AoA_corcolumns to the dataframe
+    df_less_tail['delta_alpha_total'] = delta_alpha_total
+    df_less_tail['delta_CL'] = 0 # No correction for lift coefficient
+    df_less_tail['delta_CDw'] = delta_CDw
+    df_less_tail['delta_CMpitch_total'] = delta_CM_total
+    df_less_tail['AoA_cor'] = alpha_cor
+    df_less_tail['CL_cor2'] = df_less_tail['CL_cor1'] # No correction for lift coefficient
+    df_less_tail['CD_cor2'] = CD_cor2
+    df_less_tail['CMpitch_cor2'] = CM_cor2
+    
+    return df_less_tail    

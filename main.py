@@ -33,6 +33,7 @@ df_less_tail_unc = pd.read_csv('tunnel_data_unc/uncorrected_tailoff.txt', delimi
 ## ---------------------------------------------------------------------
 # Support Load Subtraction: Subtract the strut loads from the uncorrected
 # using the data provided for the model-less run.
+# TODO: Might have to implement the support load subtraction after performing blockage correction.
 df_less_model = pd.read_csv('model_off_data/modelOffData_condensed.csv', delimiter = ',')
 df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
 df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
@@ -43,8 +44,9 @@ df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
 ## ---------------------------------------------------------------------
 # Thrust/Drag Accounting: Calculate the thrust and update the drag coefficients
 # TODO: This has to be implemented using Remco's code.
-
-
+# TODO: Thrust accounting depends on the effective velocity, which depends on the total blockage correction. Seems like we have a loop; should sort this out.
+# TODO: Wake blockage correction depends on the drag coefficient, which depends on the thrust accounting. Could apply the solid blcokage correction before the thrust accounting.
+# TODO: Could then iterate: thrust/drag accounting <-> wake/slipstream blockage correction
 ## ---------------------------------------------------------------------
 ## Apply the blockage corrections
 ## ---------------------------------------------------------------------
@@ -53,18 +55,17 @@ df = bc.apply_total_blockage_corrections(df_unc)
 ## ---------------------------------------------------------------------
 ## Apply the lift-interference corrections
 ## ---------------------------------------------------------------------
-df = bc.apply_lift_interference_corrections(df, df_less_tail_unc)
+df = bc.apply_lift_interference_correction(df, df_less_tail_unc)
 
 ## ---------------------------------------------------------------------
 ## Write the corrected data to a file
 ## ---------------------------------------------------------------------
 df.to_csv('tunnel_data_cor/corrected_data.txt', sep = '\t', index = False)
 
-
 ## ---------------------------------------------------------------------
 ## Create the response surface model
 ## ---------------------------------------------------------------------
-# TODO: exclude points that are not relevant for the response surface model
+
 # TODO: create the response surface model
 
 ## ---------------------------------------------------------------------
@@ -86,8 +87,6 @@ df.to_csv('tunnel_data_cor/corrected_data.txt', sep = '\t', index = False)
 ## Create relevant plots
 ## ---------------------------------------------------------------------
 # TODO
-
-
 
 
 
