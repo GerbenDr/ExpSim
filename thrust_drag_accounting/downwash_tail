@@ -1,0 +1,104 @@
+# output: downwash at location of propeller
+
+# import csv
+# from dataclasses import dataclass
+# 
+# @dataclass
+# class ElevatorData:
+#     run: int
+#     hr: int
+#     min: int
+#     sec: int
+#     AoA: float
+#     AoS: float
+#     dPb: float
+#     pBar: float
+#     temp: float
+#     B1: float
+#     B2: float
+#     B3: float
+#     B4: float
+#     B5: float
+#     B6: float
+#     rpmWT: float
+#     rho: float
+#     q: float
+#     V: float
+#     Re: float
+#     rpsM1: float
+#     rpsM2: float
+#     iM1: float
+#     iM2: float
+#     dPtQ: float
+#     tM1: float
+#     tM2: float
+#     vM1: float
+#     vM2: float
+#     pInf: float
+#     nu: float
+#     J_M1: float
+#     J_M2: float
+#     FX: float
+#     FY: float
+#     FZ: float
+#     MX: float
+#     MY: float
+#     MZ: float
+#     CFX: float
+#     CFY: float
+#     CFZ: float
+#     CMX: float
+#     CMY: float
+#     CMZ: float
+#     CN: float
+#     CT: float
+#     CY: float
+#     CL: float
+#     CD: float
+#     CYaw: float
+#     CMroll: float
+#     CMpitch: float
+#     CMpitch25c: float
+#     CMyaw: float
+#     v_i: float = 0.0
+#     T_0: float = 0.0
+#     thrust: float = 0.0  # Additional attribute for thrust
+# 
+# def read_elevator_data(file_path):
+#     data_list = []
+#     with open(file_path, 'r') as file:
+#         reader = csv.DictReader(file, delimiter='\t')
+#         for row in reader:
+#             # Convert all values to appropriate types
+#             row_data = {key: float(value) if '.' in value else int(value) for key, value in row.items()}
+#             # Create an instance of ElevatorData
+#             data = ElevatorData(**row_data)
+#             data_list.append(data)
+#     return data_list
+
+from math import pi
+
+b_wing = 1.397
+b_effective = 0.74
+y_over_b = 0.14 # location of motors wrt centreline, scaled to main wing
+S = 0.2172
+
+gammas = []
+# file_path = 'C:/Users/lucil/OneDrive/Documenten/MSc1/ExpSim/AERODYNAMIC_DATA/uncorrected_elevator10.txt'
+elevator_data = read_elevator_data(file_path)
+for line in elevator_data:
+    rho = line.rho
+    CL = line.CL
+    V = line.V
+    Lift = 1/2 * rho * V**2 * S * CL
+    Lift_per_span = Lift/b_wing
+    Gamma = Lift_per_span/(rho*V)
+    gammas.append(Gamma)
+
+downwash = []
+for i in range(len(gammas)):
+    w_tail = gammas[i] / (4 * pi) * b_wing * b_effective / ((b_wing * b_effective/2)**2 - (y_over_b * b_wing)**2)
+    # only contribution from 2 tip vortices since bound vortex induces no velocity
+    downwash.append(w_tail)
+
+print(downwash) # in m/s, positive downwards
