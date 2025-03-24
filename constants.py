@@ -43,6 +43,7 @@ TAU2_TAILARM = 0.756 # - factor based on the given graph for elliptical tunnels 
 V_HTAIL_LESS_NACELLE = 0.0009751 # m^3
 V_NACELLE = 0.0007921 # m^3 single nacelle volume
 V_HTAIL_TOTAL = V_HTAIL_LESS_NACELLE + 2 * V_NACELLE # m^3
+C_HTAIL = 0.9*0.165
 B_HTAIL = 0.576 # m
 T_OVER_C_HTAIL = 0.15 # - (t/c) ratio for NACA 64(2)-015A airfoil
 K1_HTAIL = 1.019 # - horizontal tail shape factor (based on 64-series NACA airfoil and given t/c ratio)

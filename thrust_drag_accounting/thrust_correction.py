@@ -79,7 +79,7 @@ def read_elevator_data(file_path):
 
 
 # Example usage
-file_path = 'data/uncorrected_elevator_10.txt'
+file_path = 'uncorrected_elevator_10.txt'
 elevator_data = read_elevator_data(file_path)
 
 class dataprocessor:
