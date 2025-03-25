@@ -4,6 +4,7 @@ import BoundaryCorrections as bc
 import ResponseSurfaceModel as rsm
 import Validation as val
 import Plots as plt
+import numpy as np
 
 # ---------------------------------------------------------------------
 ## Combine the data from the minus 10 and plus 10 runs
@@ -26,6 +27,11 @@ df_unc.to_csv('tunnel_data_unc/combined_data.txt', sep = '\t', index = False)
 df_less_model = pd.read_csv('model_off_data/modelOffData_condensed.csv', delimiter = ',')
 df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
 
+df_RSM = df_unc.loc[c.mask_RSM]
+df_validation = df_unc.loc[c.mask_validation]
 
+RSM = rsm.ResponseSurfaceModel(df_RSM)
 
-pass
+result, residuals, loss = RSM.predict(df_validation)
+
+print(loss, RSM.training_loss)

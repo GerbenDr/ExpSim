@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from scipy.interpolate import griddata
 
+#TODO: update keys if relevant
+keys_to_model = ['CL', 'CD', 'CMpitch']
+
 def unpack_RSM_data(dataframe):
     AOA = dataframe['AoA'].to_numpy()
     DELTA_E = dataframe['delta_e'].to_numpy()
@@ -37,10 +40,11 @@ def unpack_RSM_data(dataframe):
 
 class ResponseSurfaceModel:
     def __init__(self, dataframe: pd.DataFrame):
-        self.variables = {key : dataframe[key] for key in ['CL', 'CD', 'CMpitch']}
-        self.coefficients = {key: np.zeros(20) for key in ['CL', 'CD', 'CMpitch']}
+        self.variables = {key : dataframe[key] for key in keys_to_model}
+        self.coefficients = {key: np.zeros(20) for key in keys_to_model}
 
         self.data = unpack_RSM_data(dataframe)
+        self.fit()
 
     def _evaluate(self,coefficients, data=None):
         if data is None:
@@ -83,7 +87,10 @@ class ResponseSurfaceModel:
             residuals[key] = res.fun
 
         self.coefficients = result
-        return result, residuals
+        self.residuals = residuals
+        training_loss = {key:value / self.data.shape[1] for key, value in residuals.items()} # LOSS = MEAN RESIDUAL
+        self.training_loss = training_loss
+        return result, residuals, training_loss
 
     def predict(self, dataframe: pd.DataFrame):
 
@@ -92,9 +99,11 @@ class ResponseSurfaceModel:
         residuals = {}
         for key, var in self.variables.items():
             result[key] = self._evaluate(self.coefficients[key], data_ext)
-            residuals[key] = np.sum((result[key] - var)**2)
+            residuals[key] = np.sum((result[key] - dataframe[key])**2) 
 
-        return result, residuals
+        loss = {key:value / data_ext.shape[1] for key, value in residuals.items()} # LOSS = MEAN RESIDUAL
+        # TODO: Better output?
+        return result, residuals, loss
     
     def plot_RSM(self, reference_dataframe=None, key='CL', save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=3, tolj=0.3):
         """

@@ -87,7 +87,6 @@ HALFCHORD_OVER_BTUNNEL = 0.5 * C_WING / B_TUNNEL # -
 TAILARM_OVER_BTUNNEL = TAILARM / B_TUNNEL # -
 
 # MASKING THE DATA
-
 mask_RSM = np.hstack((
     np.arange(0, 9, 1),
     np.arange(11, 13, 1),
@@ -102,7 +101,6 @@ mask_RSM = np.hstack((
     np.arange(87, 88, 1),
     np.arange(92, 93, 1),
 ))
-
 
 mask_validation = np.hstack((
     np.arange(0, 9, 1),
