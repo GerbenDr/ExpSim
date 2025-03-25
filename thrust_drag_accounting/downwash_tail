@@ -97,8 +97,7 @@ for line in elevator_data:
 
 downwash = []
 for i in range(len(gammas)):
-    w_tail = gammas[i] / (4 * pi) * b_wing * b_effective / ((b_wing * b_effective/2)**2 - (y_over_b * b_wing)**2)
-    # only contribution from 2 tip vortices since bound vortex induces no velocity
+    w_tail = gammas[i] / (4 * pi) * b_wing * b_effective / ((b_wing * b_effective/2)**2 - (y_over_b * b_wing)**2) + gammas[i] / (4 * pi * 3.22 * MAC)
     downwash.append(w_tail)
 
 print(downwash) # in m/s, positive downwards
