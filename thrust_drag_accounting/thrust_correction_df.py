@@ -1,7 +1,14 @@
+import sys
+from pathlib import Path
+
+# Add root project directory to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from thrust_drag_accounting.prop_off_RSM import rsm_CD_po
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from prop_off_RSM import rsm_CD_po  # same imports you have in the original code
+from thrust_drag_accounting.prop_off_RSM import rsm_CD_po  # same imports you have in the original code
 import constants
 from thrust_drag_accounting.airfoil_CD import xfoil_airfoil_CD, xfoil_airfoil_CL
 from thrust_drag_accounting.htail_alpha import htail_alpha, htail_velocity
@@ -58,7 +65,6 @@ def thrust_iteration(row, current_thrust):
 
     # Drag with velocity + induced velocity
     htail_velocity_motor_on = np.sqrt((np.cos(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha) + v_i)**2 + (np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha))**2)
-    print(htail_velocity_motor_on)
     htail_alpha_motor_on = np.rad2deg(np.arcsin(np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha)/htail_velocity_motor_on))
     D_motor_on = calculate_blown_area_drag(alpha, rho, htail_alpha_motor_on, htail_velocity_motor_on, b_half_wake)
 
@@ -85,18 +91,29 @@ def thrust_correction(df, tol=1e-12, max_iter=100):
     Performs the full thrust correction for each row in the DataFrame.
     After convergence, writes the final thrust value into a new column 'thrust'.
     """
+    calculate_T0(df)
+
     final_thrusts = []
 
     for idx, row in df.iterrows():
         thrust = float(row['T_0'])
-        for _ in range(max_iter):
-            new_thrust = thrust_iteration(row, thrust)
-            if abs(new_thrust - thrust) < tol:
-                break
-            thrust = new_thrust
+        try:
+            for _ in range(max_iter):
+                new_thrust = thrust_iteration(row, thrust)
+                if abs(new_thrust - thrust) < tol:
+                    break
+                thrust = new_thrust
+
+            if np.isnan(thrust):
+                raise ValueError
+        except ValueError:
+            print(f"NaN encountered in thrust iteration at row {idx}, using T_0 instead.")
+            thrust = float(row['T_0'])
+
         final_thrusts.append(thrust)
 
     df['thrust'] = final_thrusts
+    return df
 
 
 def plot_thrust_iteration_example(row, tol=1e-12, max_iter=100):
@@ -129,12 +146,8 @@ if __name__ == "__main__":
     file_path = 'uncorrected_elevator_10.txt'
     df = read_data_to_df(file_path)
 
-    # Compute T_0 for each row
-    calculate_T0(df)
-
     # Run thrust correction for each row
     thrust_correction(df)
-
     # Optionally plot iteration details for one row (e.g. row 0)
     plot_thrust_iteration_example(df.loc[0])
 

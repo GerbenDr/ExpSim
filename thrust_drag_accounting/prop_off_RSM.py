@@ -83,7 +83,9 @@ def read_prop_off_data(file_path):
     return data_list
 
 # Example usage
-file_path = 'prop_off.csv'
+from pathlib import Path
+
+file_path = Path(__file__).resolve().parent / "prop_off.csv"
 prop_off_data = read_prop_off_data(file_path)
 print(prop_off_data[0])
 

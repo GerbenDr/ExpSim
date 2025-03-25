@@ -4,7 +4,8 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
 # Path to the CSV file
-file_path = 'yplus_14_komegasst.csv'
+from pathlib import Path
+file_path = Path(__file__).resolve().parent / "yplus_14_komegasst.csv"
 
 # Read the CSV into a DataFrame
 df = pd.read_csv(file_path, delimiter=',')
@@ -34,6 +35,5 @@ df = calculate_freestream_alpha(df)
 df = calculate_htail_alpha(df)
 df = add_velocity_magnitude(df)
 
-print(df)
 htail_alpha = interpolate_htail_alpha(df)
 htail_velocity = interpolate_velocity_magnitude(df)
