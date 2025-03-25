@@ -33,6 +33,7 @@ def interpolate_velocity_magnitude(df):
 df = calculate_freestream_alpha(df)
 df = calculate_htail_alpha(df)
 df = add_velocity_magnitude(df)
+
 print(df)
 htail_alpha = interpolate_htail_alpha(df)
 htail_velocity = interpolate_velocity_magnitude(df)
