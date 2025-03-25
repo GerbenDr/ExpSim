@@ -112,8 +112,8 @@ mask_repetition_exclusive = np.hstack((
     np.arange(12, 14, 1),
     np.arange(19, 21, 1),
     np.arange(23, 25, 1),
-    np.arange(64, 69, 1),
-    np.arange(74, 79, 1),
+    np.arange(65, 69, 1),
+    np.arange(75, 79, 1),
     np.arange(82, 86, 1),
     np.arange(88, 91, 1),
 ))
@@ -128,6 +128,17 @@ mask_repetition_inclusive = np.hstack((
     np.arange(81, 86, 1),
     np.arange(87, 91, 1),
 ))
+
+mask_repetition_pointwise_inclusive = [
+    np.arange(7, 10, 1),
+    np.arange(11, 14, 1),
+    np.arange(18, 21, 1),
+    np.arange(22, 25, 1),
+    np.arange(64, 69, 1),
+    np.arange(74, 79, 1),
+    np.arange(81, 86, 1),
+    np.arange(87, 91, 1),
+]
 
 mask_low_Re = np.hstack((
     np.arange(35, 44, 1),

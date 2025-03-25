@@ -30,6 +30,23 @@ df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
 df_RSM = df_unc.loc[c.mask_RSM]
 df_validation = df_unc.loc[c.mask_validation]
 
+N_repetition_points = len(c.mask_repetition_pointwise_inclusive)
+stds = [0]*N_repetition_points
+means = [0]*N_repetition_points
+
+for i, mask in enumerate(c.mask_repetition_pointwise_inclusive):
+    df_repetition = df_unc.loc[mask]
+    stds[i] = df_repetition.std(ddof=1) 
+    means[i] = df_repetition.mean()
+    for key in ['CL', 'CD', 'CMpitch']:
+        print(key, stds[i][key] / means[i][key])
+
+
+stds_mean = sum(stds) / N_repetition_points
+
+# for key in ['CL', 'CD', 'CMpitch']:
+#     print(key, stds_mean[key])
+
 RSM = rsm.ResponseSurfaceModel(df_RSM)
 
 result, residuals, loss = RSM.predict(df_validation)
