@@ -139,6 +139,7 @@ class ResponseSurfaceModel:
     
 
     def significance_histogram(self, key, save=False):
+        
         dataset_deltas   = self.training_deltas[key]
         validation_deltas = self.validation_deltas[key] 
         fig, ax = plt.subplots(figsize=(4, 3))
@@ -185,6 +186,84 @@ class ResponseSurfaceModel:
             plt.savefig('plots/significance_{}.svg'.format(key))
         else:
             plt.show()
+
+    def __get_derivatives(self, AOA, J, DELTA_E):
+        data = np.vstack((
+            np.ones(AOA.shape[0]),
+            AOA,
+            J,
+            DELTA_E,
+            AOA * J,
+            J * DELTA_E,
+            AOA * DELTA_E,
+            AOA * J * DELTA_E,
+            AOA ** 2,
+            AOA**2 * DELTA_E,
+            AOA**3,
+            J**2,
+            J**3,
+            J**2 * DELTA_E,
+            J**2 * AOA,
+            J * AOA **2,
+            J**2 * AOA **2,
+            J**2 * AOA * DELTA_E,
+            J * AOA**2 * DELTA_E,
+            J**2 * AOA**2 * DELTA_E,
+        ))
+
+        data_div_alpha = np.vstack((
+            np.zeros(AOA.shape[0]),
+            1,
+            np.zeros(AOA.shape[0]),
+            np.zeros(AOA.shape[0]),
+            J,
+            np.zeros(AOA.shape[0]),
+             DELTA_E,
+            J * DELTA_E,
+            2 * AOA,
+            2 * AOA * DELTA_E,
+            3 * AOA**2,
+            np.zeros(AOA.shape[0]),
+            np.zeros(AOA.shape[0]),
+            np.zeros(AOA.shape[0]),
+            J**2,
+            J * 2 * AOA,
+            J**2 * 2 * AOA,
+            J**2 * DELTA_E,
+            J * 2 * AOA * DELTA_E,
+            J**2 * 2 * AOA * DELTA_E,
+        ))
+
+        data = np.vstack((
+            np.ones(AOA.shape[0]),
+            AOA,
+            J,
+            DELTA_E,
+            AOA * J,
+            J * DELTA_E,
+            AOA * DELTA_E,
+            AOA * J * DELTA_E,
+            AOA ** 2,
+            AOA**2 * DELTA_E,
+            AOA**3,
+            J**2,
+            J**3,
+            J**2 * DELTA_E,
+            J**2 * AOA,
+            J * AOA **2,
+            J**2 * AOA **2,
+            J**2 * AOA * DELTA_E,
+            J * AOA**2 * DELTA_E,
+            J**2 * AOA**2 * DELTA_E,
+        ))
+        
+        
+
+    def get_derivative(self, key, variable):
+        pass
+
+    def plot_derivative(self, key):
+        pass
 
     def plot_RSM(self, reference_dataframe=None, validation_dataframe = None, key='CL', save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=3, tolj=0.3):
         """
