@@ -29,17 +29,6 @@ df_unc.to_csv('tunnel_data_unc/combined_data.txt', sep = '\t', index = False)
 df_less_tail_unc = pd.read_csv('tunnel_data_unc/uncorrected_tailoff.txt', delimiter = '\t')
 
 ## ---------------------------------------------------------------------
-## BEFORE CORRECTIONS: Support Load Subtraction
-## ---------------------------------------------------------------------
-# Support Load Subtraction: Subtract the strut loads from the uncorrected
-# using the data provided for the model-less run.
-# TODO: Might have to implement the support load subtraction after performing blockage correction.
-df_less_model = pd.read_csv('model_off_data/modelOffData_condensed.csv', delimiter = ',')
-df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
-df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
-# TODO: CMpitch and CMpitch25c are now different, might need to also apply the correction to the 25c data
-
-## ---------------------------------------------------------------------
 ## BEFORE CORRECTIONS: Thrust/Drag Accounting
 ## ---------------------------------------------------------------------
 # Thrust/Drag Accounting: Calculate the thrust and update the drag coefficients
@@ -51,6 +40,17 @@ df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
 ## Apply the blockage corrections
 ## ---------------------------------------------------------------------
 df = bc.apply_total_blockage_corrections(df_unc)
+
+## ---------------------------------------------------------------------
+## AFTER CORRECTIONS: Support Load Subtraction
+## ---------------------------------------------------------------------
+# Support Load Subtraction: Subtract the strut loads from the uncorrected
+# using the data provided for the model-less run.
+# TODO: Might have to implement the support load subtraction after performing blockage correction.
+df_less_model = pd.read_csv('model_off_data/modelOffData_condensed.csv', delimiter = ',')
+df_unc = bc.subtract_model_off_data(df_unc, df_less_model)
+df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model)
+# TODO: CMpitch and CMpitch25c are now different, might need to also apply the correction to the 25c data
 
 ## ---------------------------------------------------------------------
 ## Apply the lift-interference corrections
@@ -65,7 +65,6 @@ df.to_csv('tunnel_data_cor/corrected_data.txt', sep = '\t', index = False)
 ## ---------------------------------------------------------------------
 ## Create the response surface model
 ## ---------------------------------------------------------------------
-
 # TODO: create the response surface model
 
 ## ---------------------------------------------------------------------
