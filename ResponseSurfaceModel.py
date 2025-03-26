@@ -181,7 +181,7 @@ class ResponseSurfaceModel:
         validation_deltas = self.validation_deltas[key] 
         fig, ax = plt.subplots(figsize=(4, 3))
 
-        ax.hist(dataset_deltas, bins = len(dataset_deltas) // 5, density=True, color='red', label='training samples')
+        ax.hist(dataset_deltas, bins = len(dataset_deltas) // 6, density=True, color='red', label='training samples')
 
         # ax.hist(validation_deltas, bins = len(validation_deltas), density=True, color='blue', label='validation samples', alpha = 0.5)
 
@@ -203,7 +203,7 @@ class ResponseSurfaceModel:
 
         # (1) Normal distribution fit centered around zero
         normal_fit_0 = norm.pdf(x_range, loc=0, scale=std_dataset)
-        ax.plot(x_range, normal_fit_0, color='k', linestyle='--',
+        ax.plot(x_range, normal_fit_0, color='k', linestyle='-', linewidth = 2.0,
                 #  label='valid model fit'
                  )
 
