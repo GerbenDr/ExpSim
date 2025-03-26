@@ -43,6 +43,7 @@ def calculate_T0(df):
         T_0 = Fx_pon - Fx_po
         T0_values.append(T_0)
     df['T_0'] = T0_values
+    return df
 
 
 def thrust_iteration(row, current_thrust):
@@ -91,7 +92,7 @@ def thrust_correction(df, tol=1e-12, max_iter=100):
     Performs the full thrust correction for each row in the DataFrame.
     After convergence, writes the final thrust value into a new column 'thrust'.
     """
-    calculate_T0(df)
+    df = calculate_T0(df)
 
     final_thrusts = []
 

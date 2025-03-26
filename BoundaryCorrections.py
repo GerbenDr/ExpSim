@@ -6,8 +6,8 @@ import pandas as pd
 import constants as c
 import matplotlib.pyplot as plt
 
-## Obtain the drag polar from the measured data
-def get_drag_polar(df, visualise = False):
+## Obtain the drag polar from a dataframe
+def get_drag_polar(df, visualise = False, tail_on=True):
     """
     Obtain the drag polar from the given dataframe.
     This function calculates the drag polar from the given dataframe by fitting a 
@@ -23,8 +23,8 @@ def get_drag_polar(df, visualise = False):
     """
     
     # If visualise, plot the drag polar points to which the polynomial will be fitted
-    if visualise:
-        plt.scatter(df['CL'], df['CD'])
+    if False:
+        plt.scatter(df['CL'], df['CD_thrust_cor'])
         plt.xlabel('CL')
         plt.ylabel('CD')
         plt.title('Measured Data')
@@ -32,8 +32,11 @@ def get_drag_polar(df, visualise = False):
         plt.show()
         
     # Fit a second order polynomial to the data
-    # TODO: update the column names for when thrust-accounting has been done.
-    p = np.polyfit(df['CL']**2, df['CD'], 1)
+    if tail_on:
+        p = np.polyfit(df['CL']**2, df['CD_thrust_cor'], 1)
+    else:
+        df = df[(df['CL']<0.95)]
+        p = np.polyfit(df['CL']**2, df['CD'], 1)
     
     # Extract the coefficients
     a_CDi = p[0]
@@ -42,7 +45,7 @@ def get_drag_polar(df, visualise = False):
     # Visualise the drag polar if requested
     if visualise:
         # Create a range of CL values
-        CL_range = np.linspace(0, 1, 100)
+        CL_range = np.linspace(0, 1.2, 100)
         
         # Calculate the corresponding CD values
         CD_range = CD0 + a_CDi * CL_range**2
@@ -50,7 +53,10 @@ def get_drag_polar(df, visualise = False):
         # Plot the drag polar
         plt.figure()
         plt.plot(CL_range, CD_range, label = 'Drag Polar Fit')
-        plt.scatter(df['CL'], df['CD'], label = 'Measured Data')
+        if tail_on:
+            plt.scatter(df['CL'], df['CD_thrust_cor'], label = 'Measured Data')
+        else:
+            plt.scatter(df['CL'], df['CD'], label = 'Measured Data')
         plt.xlabel('CL')
         plt.ylabel('CD')
         plt.title('Drag Polar')
@@ -63,22 +69,13 @@ def get_drag_polar(df, visualise = False):
 
 ## Obtain CL-alpha curve for the aircraft-less-tail configuration
 # This curve is used to calculate the wing lift coefficient for the lift-interference correction
-def get_CL_alpha_curve_less_tail(df, V, visualise = False, exception_run=False):
+def get_CL_alpha_curve_less_tail(df, V, visualise = False):
     
     # Filter the data to only include the measurements at V m/s +/- 1%
     df_V = df[(df['V'] >= 0.99*V) & (df['V'] <= 1.01*V)]
     
-    # Apply the lift interference and blockage correction to the tail-off data
-    if not exception_run:
-        # Apply the solid blockage and wake corrections to the tail-off data
-        # Note that the blockage now does not include the horizontal tail, engine nacelles, vertical tail, and slipstream blockage
-        df_V = apply_total_blockage_corrections(df_V, tail_on = False)
-    
-        # Apply the lift interference correction
-        df_V = apply_lift_interference_correction_less_tail(df_V)
-    
     # Fit a third order polynomial to the data
-    p = np.polyfit(df_V['AoA'], df_V['CL_cor2'], 3)
+    p = np.polyfit(df_V['AoA'], df_V['CL_cor1'], 3)
     
     # Extract the coefficients
     a = p[0]
@@ -123,7 +120,7 @@ def get_CM_alpha_curve_tail():
     return CM_alpha_tail
 
 ## Subtract the model-off data from the uncorrected dataset
-def subtract_model_off_data(df_unc, df_model_off):
+def subtract_model_off_data(df_unc, df_model_off, tail_on=True):
     """
     Subtract the model-off data from the uncorrected dataset.
     This function subtracts the model-off data from the uncorrected dataset to account for 
@@ -166,7 +163,10 @@ def subtract_model_off_data(df_unc, df_model_off):
 
     # Subtract the interpolated model-off data from the uncorrected data for each component
     df_unc['CL'] = df_unc['CL'] - df_model_off_interpolated['CL']
-    df_unc['CD'] = df_unc['CD'] - df_model_off_interpolated['CD']
+    if tail_on:
+        df_unc['CD_thrust_cor'] = df_unc['CD_thrust_cor'] - df_model_off_interpolated['CD']
+    else:
+        df_unc['CD'] = df_unc['CD'] - df_model_off_interpolated['CD']
     df_unc['CY'] = df_unc['CY'] - df_model_off_interpolated['Cy']
     df_unc['CMroll'] = df_unc['CMroll'] - df_model_off_interpolated['CMroll']
     df_unc['CMpitch'] = df_unc['CMpitch'] - df_model_off_interpolated['CMpitch']
@@ -230,7 +230,7 @@ def calculate_solid_blockage_corrections(df, tail_on=True):
     return df
 
 ## Method to apply the wake blockage corrections
-def calculate_wake_blockage_corrections(df, CD0, a_CDi):
+def calculate_wake_blockage_corrections(df, CD0, a_CDi, tail_on=True):
     """
     Apply wake blockage corrections to the given dataframe.
     This function calculates and applies wake blockage corrections based on the provided
@@ -250,9 +250,11 @@ def calculate_wake_blockage_corrections(df, CD0, a_CDi):
     epsilon_wb_0 = c.S_REF / 4 / c.C_TUNNEL * CD0
 
     # Stall wake blockage
-    # TODO: update column names for when thrust-accounting has been done.
-    epsilon_wb_s = 5 * c.S_REF / 4 / c.C_TUNNEL * (df['CD'] - CD0 - a_CDi * df['CL']**2)
-
+    if tail_on:
+        epsilon_wb_s = 5 * c.S_REF / 4 / c.C_TUNNEL * (df['CD_thrust_cor'] - CD0 - a_CDi * df['CL']**2)
+    else:
+        epsilon_wb_s = 5 * c.S_REF / 4 / c.C_TUNNEL * (df['CD'] - CD0 - a_CDi * df['CL']**2)
+        
     # Total wake blockage
     epsilon_wb = epsilon_wb_0 + epsilon_wb_s
     
@@ -276,8 +278,7 @@ def calculate_slipstream_blockage_corrections(df, tail_on=True):
     
     if tail_on:
         # Calculate the thrust coefficient
-        # TODO: update the column names for when thrust-accounting has been done.
-        T_C = df['T'] / (df['rho'] * df['V']**2 * c.S_PROP) # Thrust coefficient
+        T_C = df['thrust'] / (df['rho'] * df['V']**2 * c.S_PROP) # Thrust coefficient
 
         # Slipstream blockage
         epsilon_ss = - T_C / 2 / np.sqrt(1 + 2 * T_C) * c.S_PROP / c.C_TUNNEL
@@ -318,16 +319,35 @@ def apply_total_blockage_corrections(df, tail_on=True):
                       columns containing the total blockage correction, corrected speed, and
                       corrected dynamic pressure, respectively.
     """
-    
-    # TODO: update the column names for when thrust-accounting has been done.
-    
+        
     # Calculate solid blockage correction
     df = calculate_solid_blockage_corrections(df, tail_on)
     
-    # Calculate wake blockage correction
-    # TODO: better select the part of the data to calculate the drag polar
-    CD0, a_CDi = get_drag_polar(df, visualise = False)
-    df = calculate_wake_blockage_corrections(df, CD0, a_CDi)
+    # Calculate wake blockage correction: this is done for delta_e = 10 and -10 separately
+    # TODO: Review selection of data -> drag coefficients for negative lift coefficients are diverging, so they have been left out for now (CL>0)
+    if tail_on:
+        df_plus10 = df[(df['delta_e'] == 10) & (df['V'] > 35) & (df['CL'] > 0)]
+        df_min10 = df[(df['delta_e'] == -10) & (df['V'] > 35) & (df['CL'] > 0)]
+        df_V20 = df[(df['V'] > 18) & (df['V'] < 22) & (df['CL'] > 0)]
+    
+        # Apply the wake blockage correction to the delta = +10 data
+        CD0, a_CDi = get_drag_polar(df_plus10, visualise = True)
+        df_plus10 = calculate_wake_blockage_corrections(df_plus10, CD0, a_CDi)
+        
+        # Apply the wake blockage correction to the delta = -10 data
+        CD0, a_CDi = get_drag_polar(df_min10, visualise = True)
+        df_min10 = calculate_wake_blockage_corrections(df_min10, CD0, a_CDi)
+        
+        # Apply the wake blockage correction to the V = 20 data
+        CD0, a_CDi = get_drag_polar(df_V20, visualise = True)
+        df_V20 = calculate_wake_blockage_corrections(df_V20, CD0, a_CDi)
+        
+        # Combine the dataframes
+        df = pd.concat([df_plus10, df_min10, df_V20])
+    else:
+        df = df[(df['V'] > 35)]
+        CD0, a_CDi = get_drag_polar(df, visualise = True, tail_on=False)
+        df = calculate_wake_blockage_corrections(df, CD0, a_CDi, tail_on=False)
     
     # Calculate slipstream blockage correction
     df = calculate_slipstream_blockage_corrections(df, tail_on)
@@ -345,7 +365,10 @@ def apply_total_blockage_corrections(df, tail_on=True):
     CL_cor1 = df['CL'] / (1 + epsilon_total)**2
     
     # Corrected drag coefficient
-    CD_cor1 = df['CD'] / (1 + epsilon_total)**2
+    if tail_on:
+        CD_cor1 = df['CD_thrust_cor'] / (1 + epsilon_total)**2
+    else:
+        CD_cor1 = df['CD'] / (1 + epsilon_total)**2
     
     # Corrected moment coefficient
     # TODO: check the correct CM column name i.e. quarter-chord or not
@@ -365,9 +388,10 @@ def apply_total_blockage_corrections(df, tail_on=True):
 def apply_lift_interference_correction(df, df_less_tail):
     
     # Calculate the AoA correction due to upwash
-    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, 40, visualise = False, exception_run=False)
-    a, b, c, d = CL_alpha_wing_poly
-    CL_WING = a * df['AoA']**3 + b * df['AoA']**2 + c * df['AoA'] + d
+    # The CL-alpha curve is calculated based on the corrected tail-less data.
+    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, V=40, visualise = False)
+    a, b, c_coeff, d = CL_alpha_wing_poly
+    CL_WING = a * df['AoA']**3 + b * df['AoA']**2 + c_coeff * df['AoA'] + d
     delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
     
     # Calculate the AoA correction due to upwash gradient
@@ -418,9 +442,9 @@ def apply_lift_interference_correction(df, df_less_tail):
 def apply_lift_interference_correction_less_tail(df_less_tail):
     
     # Calculate the AoA correction due to upwash
-    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, 40, visualise = False, exception_run=True)
-    a, b, c, d = CL_alpha_wing_poly
-    CL_WING = a * df_less_tail['AoA']**3 + b * df_less_tail['AoA']**2 + c * df_less_tail['AoA'] + d
+    CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, V=40, visualise = False)
+    a, b, c_coefficient, d = CL_alpha_wing_poly
+    CL_WING = a * df_less_tail['AoA']**3 + b * df_less_tail['AoA']**2 + c_coefficient * df_less_tail['AoA'] + d
     delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
     
     # Calculate the AoA correction due to upwash gradient
@@ -439,7 +463,6 @@ def apply_lift_interference_correction_less_tail(df_less_tail):
     CD_cor2 = df_less_tail['CD_cor1'] + delta_CDw
     
     # Calculate the moment coefficient correction due to upwash
-    # NOTE: CL_alpha of the wing is assumed to be needed here, not aircraft CL-Alpha.
     delta_CM_upwash = 1 / 8 * delta_alpha_upwash_gradient * CL_alpha_wing_poly[2]
     
     # Calculate the total moment coefficient correction
