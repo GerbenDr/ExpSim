@@ -54,16 +54,16 @@ RSM = rsm.ResponseSurfaceModel(df_RSM, df_validation)
 # print(np.trace(RSM.prediction_covariance))
 RSM.print_hypothesis_test_results()
 
-saveallplots = False
+saveallplots = True
 
 for key in ['CL', 'CD', 'CMpitch']:
 
-    # RSM.plot_RSM_1D(save=saveallplots, key=key, J=1.8, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
-    RSM.plot_RSM_1D(save=saveallplots, key=key, J=1.8, DELTA_E= -10, reference_dataframe=df_low_Re, reference_label='Low Re reference points')
+    RSM.plot_RSM_1D(save=saveallplots, key=key, J=1.8, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
+    # RSM.plot_RSM_1D(save=saveallplots, key=key, J=1.8, DELTA_E= -10, reference_dataframe=df_low_Re, reference_label='Low Re reference points')
 
-    # RSM.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10], J=1.6)
-    # RSM.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
-    # RSM.significance_histogram(key, save=saveallplots)
+    RSM.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10], J=1.6)
+    RSM.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
+    RSM.significance_histogram(key, save=saveallplots)
 
 
 

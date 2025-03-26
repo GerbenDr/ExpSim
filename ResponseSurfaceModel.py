@@ -305,7 +305,7 @@ class ResponseSurfaceModel:
         
         return dalpha, dj, dde
 
-    def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(0, 7, 100), DELTA_E = [-10, 10], J=1.8):
+    def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J=1.8):
         fig, ax = plt.subplots(figsize=(4, 3))
 
         colors = iter(plt.get_cmap('viridis')(np.linspace(0, 1, len(DELTA_E))))
@@ -329,7 +329,7 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
-    def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(0, 7, 100), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 100)):
+    def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 100)):
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -375,7 +375,7 @@ class ResponseSurfaceModel:
         xvar = (self.data[1] if DELTA_E is not None else self.data[1] if J is not None else self.data[2])[mask]
         yvar = (self.data[2] if DELTA_E is not None else self.data[3] if J is not None else self.data[3])[mask]
 
-        if reference_dataframe is not None:
+        if reference_dataframe is not None and not isinstance(reference_dataframe, str):
             dataref = unpack_RSM_data(reference_dataframe)
             ref_mask = np.abs(dataref[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(dataref[1]-AOA)<tolaoa if AOA is not None else np.abs(dataref[2]-J)<tolj
 
@@ -390,7 +390,7 @@ class ResponseSurfaceModel:
             zvarref = self.ground_truth[key][mask]
             ax.scatter(xvarref, yvarref, zvarref, color='blue', marker='x', label=reference_label)
 
-        if validation_dataframe is not None:
+        if validation_dataframe is not None and not isinstance(validation_dataframe, str):
             dataref = unpack_RSM_data(validation_dataframe)
             ref_mask = np.abs(dataref[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(dataref[1]-AOA)<tolaoa if AOA is not None else np.abs(dataref[2]-J)<tolj
 
@@ -448,7 +448,7 @@ class ResponseSurfaceModel:
 
         xvar = self.data[1] if (DELTA_E is not None and J is not None) else self.data[2] if (DELTA_E is not None and AOA is not None) else self.data[3]
 
-        if reference_dataframe is not None:
+        if reference_dataframe is not None and not isinstance(reference_dataframe, str):
             dataref = unpack_RSM_data(reference_dataframe)
             ref_mask = np.logical_and(
             np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
@@ -474,7 +474,7 @@ class ResponseSurfaceModel:
             zvarref = self.ground_truth[key][mask]
             ax.scatter(xvarref, zvarref, color='blue', marker='x', label=reference_label)
 
-        if validation_dataframe is not None:
+        if validation_dataframe is not None and not isinstance(validation_dataframe, str):
             dataref = unpack_RSM_data(validation_dataframe)
             ref_mask = np.logical_and(
             np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
