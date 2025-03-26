@@ -51,7 +51,7 @@ RSM = rsm.ResponseSurfaceModel(df_RSM, df_validation)
 
 # print(np.trace(RSM.coefficient_covariance))
 # print(np.trace(RSM.prediction_covariance))
-
+RSM.print_hypothesis_test_results()
 
 saveallplots = True
 
@@ -69,29 +69,35 @@ for key in ['CL', 'CD', 'CMpitch']:
     # tolerance = 2 * np.sqrt(2) * stds_mean[key]  # BASED ON MEASUREMENT VARIANCE
     tolerance = 2 * np.sqrt(2) * std_tr  # BASED ON RSM VARIANCE
 
-    print(f'std of measurement {key}: {stds_mean[key]:.8f}')
-    # print(f'std of difference between validation set and model: {np.sqrt(RSM.validation_loss[key]):.8f}')
-    # print(f'std of difference between training set and model: {np.sqrt(RSM.training_loss[key]):.8f}')
-    print(f'model tolerance: {tolerance:.8f}')
-    print(f'std of validation set: {std_val:.8f}')
-    print(f'std of training set: {std_tr:.8f}')
+    # print(f'std of measurement {key}: {stds_mean[key]:.8f}')
+    # # print(f'std of difference between validation set and model: {np.sqrt(RSM.validation_loss[key]):.8f}')
+    # # print(f'std of difference between training set and model: {np.sqrt(RSM.training_loss[key]):.8f}')
+    # print(f'model tolerance: {tolerance:.8f}')
+    # print(f'std of validation set: {std_val:.8f}')
+    # print(f'std of training set: {std_tr:.8f}')
 
-    print(f'mean of validation set: {mean_val:.8f}')
+    # print(f'mean of validation set: {mean_val:.8f}')
 
     RSM.significance_histogram(key, save=saveallplots)
 
     # prob_alpha = 1 - norm.cdf(std_val / std_tr)
     # prob_beta = norm.cdf((tolerance - std_val) / std_tr)
 
-    for validation_value in RSM.validation_deltas[key]:
-        print(f'Validation delta: {validation_value:.4f}, {validation_value / std_tr:.4f} std')
-        prob_alpha = (1 - norm.cdf(validation_value / std_tr)) 
-        prob_beta = (1 - norm.cdf((tolerance - validation_value) / std_tr))
-        # note: both of these should be high(er than the established bounds: 5% for alpha, 1% for beta)
-        # TODO: more math more gooder
-        print(f'Probability validation delta higher than recorded, assuming valid model: {prob_alpha * 100:.4f}%')
-        print(f'Probability validation delta lower than recorded, assuming invalid (biased) model: {prob_beta * 100:.4f}%')
-        print(f'likelihood of valid model: {prob_alpha / prob_beta:.4f}')
+    # for validation_value in RSM.validation_deltas[key]:
+        # print(f'Validation delta: {validation_value:.4f}, {validation_value / std_tr:.4f} std')
+        # prob_alpha = (1 - norm.cdf(validation_value / std_tr)) 
+        # prob_beta = (1 - norm.cdf((tolerance - validation_value) / std_tr))
+        # # note: both of these should be high(er than the established bounds: 5% for alpha, 1% for beta)
+        # # TODO: more math more gooder
+        # print(f'Probability validation delta higher than recorded, assuming valid model: {prob_alpha * 100:.4f}%')
+        # print(f'Probability validation delta lower than recorded, assuming invalid (biased) model: {prob_beta * 100:.4f}%')
+        # print(f'likelihood of valid model: {prob_alpha / prob_beta:.4f}')
+
+    # print('Probability of validation mean being further than recorded, assuming valid model: {:.4f}%'.format(100 * 2 * norm.cdf(-np.abs(mean_val) / std_tr  *  np.sqrt(len(RSM.validation_deltas[key])))))
+    # print('Probability of ALL samples being further than recorded, assuming valid model and pairwise independent validation set:{:.4f}%'.format(100 * np.prod([2 * norm.cdf(-np.abs(validation_value) / std_tr) for validation_value in RSM.validation_deltas[key]])))
+    # print('Probability of ALL samples being further than recorded maximum, assuming valid model:{:.4f}%'.format(100 * np.prod([2 * norm.cdf(-np.max(np.abs(validation_value)) / std_tr) for validation_value in RSM.validation_deltas[key]])))
+
+
 
 
 

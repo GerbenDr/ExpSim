@@ -138,6 +138,38 @@ class ResponseSurfaceModel:
         ) @ self.data
     
 
+    def print_hypothesis_test_results(self, alpha=0.05, beta=0.01, K = 2 * np.sqrt(2)):
+
+        for key in keys_to_model:
+            std_tr = np.sqrt(self.training_loss[key])
+            std_val = np.sqrt(self.validation_loss[key])
+            mean_val = np.abs(self.validation_deltas[key].mean())
+
+            N = len(self.validation_deltas[key])
+
+            tolerance = K * std_tr
+
+            z_alpha = norm.ppf(1 - alpha / 2)  # two-tailed for alpha - deviation either direction is significant
+
+            z_alpha_actual = (mean_val * np.sqrt(N)) / std_tr
+
+            z_beta = norm.ppf(1 - beta)  # 1-tailed for beta - only consider deviation in the direction of valid model
+
+            z_beta_actual = ((tolerance - mean_val) * np.sqrt(N)) / std_tr
+
+            print('\n')
+            print('Hypothesis test results for {}:'.format(key))
+            # print('Type 1 error probability: {:.8f}%'.format(100 * 2 * (1 - norm.cdf(z_alpha_actual))))
+            # print('Type 2 error probability: {:.8f}%'.format(100 * (1-norm.cdf(z_beta_actual))))
+            print('z_alpha_actual: {:.4f}, z_alpha_bound:{:.4f}'.format(z_alpha_actual, z_alpha))
+            print('Type 1 acceptable? {}'.format(z_alpha_actual < z_alpha))
+            print('z_beta_actual: {:.4f}, z_beta_bound:{:.4f}'.format(z_beta_actual, z_beta))
+            print('Type 2 acceptable? {}'.format(z_beta_actual > z_beta))
+            print(('Model accepted' if all([z_alpha_actual < z_alpha, z_beta_actual > z_beta]) else 'Model rejected') + ' for {}'.format(key))
+            print('\n')
+
+            # prob_alpha_error = 2*(1 - norm.cdf(mean_val * np.sqrt(N) / std_tr))
+
     def significance_histogram(self, key, save=False):
         
         dataset_deltas   = self.training_deltas[key]
