@@ -85,3 +85,62 @@ BVTAIL_OVER_H_TUNNEL = B_VTAIL / H_TUNNEL # -
 K_WING = B_WING_EFFECTIVE / B_TUNNEL # - 
 HALFCHORD_OVER_BTUNNEL = 0.5 * C_WING / B_TUNNEL # -
 TAILARM_OVER_BTUNNEL = TAILARM / B_TUNNEL # -
+
+# MASKING THE DATA
+mask_RSM = np.hstack((
+    np.arange(0, 8, 1),
+    np.arange(10, 12, 1),
+    np.arange(14, 19, 1),
+    np.arange(21, 23, 1),
+    np.arange(25, 32, 1),
+    # np.arange(33, 36, 1),
+    np.arange(44, 53, 1),
+    np.arange(53, 64, 1),
+    np.arange(69, 74, 1),
+    np.arange(79, 82, 1),
+    np.arange(86, 87, 1),
+    np.arange(91, 92, 1),
+))
+
+mask_validation = np.hstack((
+    np.arange(32, 35, 1),
+    np.arange(92, 95, 1),
+))
+
+mask_repetition_exclusive = np.hstack((
+    np.arange(8, 10, 1),
+    np.arange(12, 14, 1),
+    np.arange(19, 21, 1),
+    np.arange(23, 25, 1),
+    np.arange(65, 69, 1),
+    np.arange(75, 79, 1),
+    np.arange(82, 86, 1),
+    np.arange(88, 91, 1),
+))
+
+mask_repetition_inclusive = np.hstack((
+    np.arange(7, 10, 1),
+    np.arange(11, 14, 1),
+    np.arange(18, 21, 1),
+    np.arange(22, 25, 1),
+    np.arange(63, 69, 1),
+    np.arange(73, 79, 1),
+    np.arange(81, 86, 1),
+    np.arange(87, 91, 1),
+))
+
+mask_repetition_pointwise_inclusive = [
+    np.arange(7, 10, 1),
+    np.arange(11, 14, 1),
+    np.arange(18, 21, 1),
+    np.arange(22, 25, 1),
+    np.arange(64, 69, 1),
+    np.arange(74, 79, 1),
+    np.arange(81, 86, 1),
+    np.arange(87, 91, 1),
+]
+
+mask_low_Re = np.hstack((
+    np.arange(35, 44, 1),
+))
+
