@@ -140,6 +140,10 @@ class ResponseSurfaceModel:
 
     def print_hypothesis_test_results(self, alpha=0.05, beta=0.01, K = 2 * np.sqrt(2)):
 
+        if self.validation_dataframe is None:
+            print('Warning: attempting to perform hypothesis test, but no validation data was provided')
+            return
+
         for key in keys_to_model:
             std_tr = np.sqrt(self.training_loss[key])
             std_val = np.sqrt(self.validation_loss[key])
@@ -166,7 +170,8 @@ class ResponseSurfaceModel:
             print('z_beta_actual: {:.4f}, z_beta_bound:{:.4f}'.format(z_beta_actual, z_beta))
             print('Type 2 acceptable? {}'.format(z_beta_actual > z_beta))
             print(('Model accepted' if all([z_alpha_actual < z_alpha, z_beta_actual > z_beta]) else 'Model rejected') + ' for {}'.format(key))
-            print('\n')
+        
+        return
 
             # prob_alpha_error = 2*(1 - norm.cdf(mean_val * np.sqrt(N) / std_tr))
 
@@ -353,7 +358,7 @@ class ResponseSurfaceModel:
 
 
 
-    def plot_RSM(self, reference_dataframe=None, validation_dataframe = None, key='CL', save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=3, tolj=0.3):
+    def plot_RSM_2D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1):
         """
         plot a 2D slice of the response surface model
         you MUST set at least one of DELTA_E, AOA, or J to a value
@@ -425,9 +430,96 @@ class ResponseSurfaceModel:
         ax.legend()
         ax.grid()
         if save:
-            plt.savefig('plots/RSM_{}_{}_{}.svg'.format(key, xlabel, ylabel))
+            plt.savefig('plots/RSM_2D_{}_{}_{}.svg'.format(key, xlabel, ylabel))
         else:
             plt.show()
+
+    def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1):
+        """
+        plot a 1D slice of the response surface model
+        you MUST set at least two of DELTA_E, AOA, or J to a value
+        can add a reference data as a scatterplot
+        """
+        if sum([DELTA_E is None, AOA is None, J is None]) > 1:
+            raise ValueError('You must set two of DELTA_E, AOA, or J to a value')
+
+        fig, ax = plt.subplots(figsize=(4, 3))
+
+        xvar = self.data[1] if (DELTA_E is not None and J is not None) else self.data[2] if (DELTA_E is not None and AOA is not None) else self.data[3]
+
+        if reference_dataframe == 'self':
+            mask = np.logical_and(
+            np.abs(self.data[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(self.data[3].shape, True),
+            np.logical_and(
+                np.abs(self.data[2] - J) < tolj if J is not None else np.full(self.data[3].shape, True),
+                np.abs(self.data[1] - AOA) < tolaoa if AOA is not None else np.full(self.data[3].shape, True)
+            )
+            )
+            xvarref = xvar[mask]
+            zvarref = self.ground_truth[key][mask]
+            ax.scatter(xvarref, zvarref, color='blue', marker='x', label='Design Points')
+
+        elif reference_dataframe is not None:
+            dataref = unpack_RSM_data(reference_dataframe)
+            ref_mask = np.logical_and(
+            np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
+            np.logical_and(
+                np.abs(dataref[2] - J) < tolj if J is not None else np.full(dataref[3].shape, True),
+                np.abs(dataref[1] - AOA) < tolaoa if AOA is not None else np.full(dataref[3].shape, True)
+            )
+            )
+            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
+            xvarref = (dataref[1] if (DELTA_E is not None and J is not None) else dataref[2] if (DELTA_E is not None and AOA is not None) else dataref[3])[ref_mask]
+            ax.scatter(xvarref, zvarref, color='blue', marker='x', label='Reference Points')
+
+        if validation_dataframe == 'self' and self.validation_dataframe is not None:
+            val_mask = np.logical_and(
+            np.abs(self.validation_data[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(self.validation_data[3].shape, True),
+            np.logical_and(
+                np.abs(self.validation_data[2] - J) < tolj if J is not None else np.full(self.validation_data[3].shape, True),
+                np.abs(self.validation_data[1] - AOA) < tolaoa if AOA is not None else np.full(self.validation_data[3].shape, True)
+            )
+            )
+            xvarref = (self.validation_data[1] if (DELTA_E is not None and J is not None) else self.validation_data[2] if (DELTA_E is not None and AOA is not None) else self.validation_data[3])[val_mask]
+            zvarref = self.validation_ground_truth[key][val_mask]
+            ax.scatter(xvarref, zvarref, color='green', marker='o', label='Validation Points')
+
+        elif self.validation_dataframe is None:
+            print('Warning: attempting to plot validation dataset, but no validation points were specified')
+
+        elif validation_dataframe is not None:
+            dataref = unpack_RSM_data(validation_dataframe)
+            ref_mask = np.logical_and(
+            np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
+            np.logical_and(
+                np.abs(dataref[2] - J) < tolj if J is not None else np.full(dataref[3].shape, True),
+                np.abs(dataref[1] - AOA) < tolaoa if AOA is not None else np.full(dataref[3].shape, True)
+            )
+            )
+            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
+            xvarref = (dataref[1] if (DELTA_E is not None and J is not None) else dataref[2] if (DELTA_E is not None and AOA is not None) else dataref[3])[ref_mask]
+            ax.scatter(xvarref, zvarref, color='green', marker='o', label='Validation Points')
+
+
+        # Create a grid to interpolate onto
+        X = np.linspace(xvar.min(), xvar.max(), 100)
+        adj = (X, np.full(X.shape, J) , np.full(X.shape, DELTA_E)) if (DELTA_E is not None and J is not None) else (np.full(X.shape, AOA), X , np.full(X.shape, DELTA_E)) if (DELTA_E is not None and AOA is not None) else (np.full(X.shape, AOA), np.full(X.shape, J), X)
+        model_var = self._evaluate_from_AJD(self.coefficients[key], *adj)
+
+        ax.plot(X, model_var, color='red', label='Response Surface Model')
+
+
+        xlabel = 'AoA' if (DELTA_E is not None and J is not None) else 'J' if (DELTA_E is not None and AOA is not None) else 'DELTA_E'
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(key)
+        ax.legend()
+        ax.grid()
+        if save:
+            plt.savefig('plots/RSM_1D_{}_{}.svg'.format(key, xlabel))
+        else:
+            plt.show()
+
 
 
 if __name__ == "__main__":
