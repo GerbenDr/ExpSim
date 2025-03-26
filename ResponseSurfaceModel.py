@@ -15,7 +15,7 @@ def unpack_RSM_data(dataframe):
     DELTA_E = dataframe['delta_e'].to_numpy()
     J = 0.5 * (dataframe['J_M1'] +  dataframe['J_M2']).to_numpy()
     data = np.vstack((
-            np.ones(AOA.shape[0]),
+            np.ones(AOA.shape),
             AOA,
             J,
             DELTA_E,
@@ -187,83 +187,139 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
-    def __get_derivatives(self, AOA, J, DELTA_E):
-        data = np.vstack((
-            np.ones(AOA.shape[0]),
-            AOA,
+    def get_derivatives(self, AOA, J, DELTA_E):
+        
+        data_div_alpha = np.stack((
+            np.zeros(AOA.shape),
+            np.ones(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
             J,
-            DELTA_E,
-            AOA * J,
-            J * DELTA_E,
-            AOA * DELTA_E,
-            AOA * J * DELTA_E,
-            AOA ** 2,
-            AOA**2 * DELTA_E,
-            AOA**3,
-            J**2,
-            J**3,
-            J**2 * DELTA_E,
-            J**2 * AOA,
-            J * AOA **2,
-            J**2 * AOA **2,
-            J**2 * AOA * DELTA_E,
-            J * AOA**2 * DELTA_E,
-            J**2 * AOA**2 * DELTA_E,
-        ))
-
-        data_div_alpha = np.vstack((
-            np.zeros(AOA.shape[0]),
-            1,
-            np.zeros(AOA.shape[0]),
-            np.zeros(AOA.shape[0]),
-            J,
-            np.zeros(AOA.shape[0]),
+            np.zeros(AOA.shape),
              DELTA_E,
             J * DELTA_E,
             2 * AOA,
             2 * AOA * DELTA_E,
             3 * AOA**2,
-            np.zeros(AOA.shape[0]),
-            np.zeros(AOA.shape[0]),
-            np.zeros(AOA.shape[0]),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
             J**2,
             J * 2 * AOA,
             J**2 * 2 * AOA,
             J**2 * DELTA_E,
             J * 2 * AOA * DELTA_E,
             J**2 * 2 * AOA * DELTA_E,
-        ))
+        ), axis=-1)
 
-        data = np.vstack((
-            np.ones(AOA.shape[0]),
+        data_div_J = np.stack((
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.ones(AOA.shape),
+            np.zeros(AOA.shape),
             AOA,
-            J,
             DELTA_E,
-            AOA * J,
-            J * DELTA_E,
+            np.zeros(AOA.shape),
             AOA * DELTA_E,
-            AOA * J * DELTA_E,
-            AOA ** 2,
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            2 * J,
+            3 * J**2,
+            2 * J * DELTA_E,
+            2 * J * AOA,
+            AOA **2,
+            2 * J * AOA **2,
+            2 * J * AOA * DELTA_E,
             AOA**2 * DELTA_E,
-            AOA**3,
+            2 * J * AOA**2 * DELTA_E,
+        ), axis=-1)
+
+        data_div_delta_e = np.stack((
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.ones(AOA.shape),
+            np.zeros(AOA.shape),
+            J,
+            AOA,
+            AOA * J,
+            np.zeros(AOA.shape),
+            AOA**2,
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
             J**2,
-            J**3,
-            J**2 * DELTA_E,
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
+            np.zeros(AOA.shape),
             J**2 * AOA,
-            J * AOA **2,
-            J**2 * AOA **2,
-            J**2 * AOA * DELTA_E,
-            J * AOA**2 * DELTA_E,
-            J**2 * AOA**2 * DELTA_E,
-        ))
-        
-        
+            J * AOA**2,
+            J**2 * AOA**2,
+        ), axis=-1)
 
-    def get_derivative(self, key, variable):
-        pass
+        dalpha = {}
+        dj = {}
+        dde = {}
+        for key in self.ground_truth.keys():
+            dalpha[key] = np.tensordot(self.coefficients[key], data_div_alpha, axes=(0, -1))
+            dj[key] = np.tensordot(self.coefficients[key], data_div_J, axes=(0, -1))
+            dde[key] = np.tensordot(self.coefficients[key], data_div_delta_e, axes=(0, -1))
+        
+        return dalpha, dj, dde
 
-    def plot_derivative(self, key):
-        pass
+    def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(0, 7, 100), DELTA_E = [-10, 10], J=1.8):
+        fig, ax = plt.subplots(figsize=(4, 3))
+
+        colors = iter(plt.get_cmap('viridis')(np.linspace(0, 1, len(DELTA_E))))
+        
+        for delta_e in DELTA_E:
+            c=next(colors)
+            da, dj, dde = self.get_derivatives(AOA, np.full(AOA.shape, J), np.full(AOA.shape, delta_e))
+
+            deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+            ax.plot(AOA, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c)
+
+
+        var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        ax.set_xlabel('$\\alpha$')
+        ax.set_ylabel(f'$d{key}/d{var}$')
+        ax.legend()
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/{}_{}_vs_alpha.svg'.format(key, var))
+        else:
+            plt.show()
+
+    def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(0, 7, 100), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 100)):
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        colors = iter(plt.get_cmap('viridis')(np.linspace(0, 1, len(DELTA_E))))
+
+        X, Y = np.meshgrid(AOA, J)
+        
+        for delta_e in DELTA_E:
+            c=next(colors)
+            da, dj, dde = self.get_derivatives(X, Y, np.full(X.shape, delta_e))
+            deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+            ax.plot(X, Y, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
+
+        var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        ax.set_xlabel('$\\alpha$')
+        ax.set_ylabel('$J$')
+        ax.set_zlabel(f'$d{key}/d{var}$')
+        ax.legend()
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/{}_{}_vs_alpha_J.svg'.format(key, var))
+        else:
+            plt.show()
+
+
 
     def plot_RSM(self, reference_dataframe=None, validation_dataframe = None, key='CL', save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=3, tolj=0.3):
         """
