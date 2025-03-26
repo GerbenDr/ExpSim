@@ -358,7 +358,7 @@ class ResponseSurfaceModel:
 
 
 
-    def plot_RSM_2D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1):
+    def plot_RSM_2D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
         """
         plot a 2D slice of the response surface model
         you MUST set at least one of DELTA_E, AOA, or J to a value
@@ -375,23 +375,31 @@ class ResponseSurfaceModel:
         xvar = (self.data[1] if DELTA_E is not None else self.data[1] if J is not None else self.data[2])[mask]
         yvar = (self.data[2] if DELTA_E is not None else self.data[3] if J is not None else self.data[3])[mask]
 
-        if reference_dataframe == 'self':
-            xvarref = xvar
-            yvarref = yvar
-            zvarref = self.ground_truth[key][mask]
-            ax.scatter(xvarref, yvarref, zvarref, color='blue', marker='x', label='Design Points')
-
-        elif reference_dataframe is not None:
+        if reference_dataframe is not None:
             dataref = unpack_RSM_data(reference_dataframe)
             ref_mask = np.abs(dataref[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(dataref[1]-AOA)<tolaoa if AOA is not None else np.abs(dataref[2]-J)<tolj
 
             zvarref = reference_dataframe[key].to_numpy()[ref_mask]
             xvarref = (dataref[1] if DELTA_E is not None else dataref[1] if J is not None else dataref[2])[ref_mask]
             yvarref = (dataref[2] if DELTA_E is not None else dataref[3] if J is not None else dataref[3])[ref_mask]
-            ax.scatter(xvarref, yvarref, zvarref, color='blue', marker='x', label='Reference Points')
+            ax.scatter(xvarref, yvarref, zvarref, color='blue', marker='x', label=reference_label)
 
+        elif reference_dataframe == 'self':
+            xvarref = xvar
+            yvarref = yvar
+            zvarref = self.ground_truth[key][mask]
+            ax.scatter(xvarref, yvarref, zvarref, color='blue', marker='x', label=reference_label)
 
-        if validation_dataframe == 'self' and self.validation_dataframe is not None:
+        if validation_dataframe is not None:
+            dataref = unpack_RSM_data(validation_dataframe)
+            ref_mask = np.abs(dataref[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(dataref[1]-AOA)<tolaoa if AOA is not None else np.abs(dataref[2]-J)<tolj
+
+            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
+            xvarref = (dataref[1] if DELTA_E is not None else dataref[1] if J is not None else dataref[2])[ref_mask]
+            yvarref = (dataref[2] if DELTA_E is not None else dataref[3] if J is not None else dataref[3])[ref_mask]
+            ax.scatter(xvarref, yvarref, zvarref, color='green', marker='o', label='Validation Points')
+
+        elif validation_dataframe == 'self' and self.validation_dataframe is not None:
             val_mask = np.abs(self.validation_data[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(self.validation_data[1]-AOA)<tolaoa if AOA is not None else np.abs(self.validation_data[2]-J)<tolj
             xvarref = (self.validation_data[1] if DELTA_E is not None else self.validation_data[1] if J is not None else self.validation_data[2])[val_mask]
             yvarref = (self.validation_data[2] if DELTA_E is not None else self.validation_data[3] if J is not None else self.validation_data[3])[val_mask]
@@ -400,14 +408,7 @@ class ResponseSurfaceModel:
         elif self.validation_dataframe is None:
             print('Warning: attempting to plot validation dataset, but no validation points were specified')
         
-        elif validation_dataframe is not None:
-            dataref = unpack_RSM_data(validation_dataframe)
-            ref_mask = np.abs(dataref[3]-DELTA_E)<tolde if DELTA_E is not None else np.abs(dataref[1]-AOA)<tolaoa if AOA is not None else np.abs(dataref[2]-J)<tolj
 
-            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
-            xvarref = (dataref[1] if DELTA_E is not None else dataref[1] if J is not None else dataref[2])[ref_mask]
-            yvarref = (dataref[2] if DELTA_E is not None else dataref[3] if J is not None else dataref[3])[ref_mask]
-            ax.scatter(xvarref, yvarref, zvarref, color='green', marker='o', label='Validation Points')
 
 
             
@@ -434,7 +435,7 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
-    def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1):
+    def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
         """
         plot a 1D slice of the response surface model
         you MUST set at least two of DELTA_E, AOA, or J to a value
@@ -447,19 +448,7 @@ class ResponseSurfaceModel:
 
         xvar = self.data[1] if (DELTA_E is not None and J is not None) else self.data[2] if (DELTA_E is not None and AOA is not None) else self.data[3]
 
-        if reference_dataframe == 'self':
-            mask = np.logical_and(
-            np.abs(self.data[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(self.data[3].shape, True),
-            np.logical_and(
-                np.abs(self.data[2] - J) < tolj if J is not None else np.full(self.data[3].shape, True),
-                np.abs(self.data[1] - AOA) < tolaoa if AOA is not None else np.full(self.data[3].shape, True)
-            )
-            )
-            xvarref = xvar[mask]
-            zvarref = self.ground_truth[key][mask]
-            ax.scatter(xvarref, zvarref, color='blue', marker='x', label='Design Points')
-
-        elif reference_dataframe is not None:
+        if reference_dataframe is not None:
             dataref = unpack_RSM_data(reference_dataframe)
             ref_mask = np.logical_and(
             np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
@@ -470,9 +459,35 @@ class ResponseSurfaceModel:
             )
             zvarref = reference_dataframe[key].to_numpy()[ref_mask]
             xvarref = (dataref[1] if (DELTA_E is not None and J is not None) else dataref[2] if (DELTA_E is not None and AOA is not None) else dataref[3])[ref_mask]
-            ax.scatter(xvarref, zvarref, color='blue', marker='x', label='Reference Points')
+            ax.scatter(xvarref, zvarref, color='blue', marker='x', label=reference_label)
 
-        if validation_dataframe == 'self' and self.validation_dataframe is not None:
+        
+        elif reference_dataframe == 'self':
+            mask = np.logical_and(
+            np.abs(self.data[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(self.data[3].shape, True),
+            np.logical_and(
+                np.abs(self.data[2] - J) < tolj if J is not None else np.full(self.data[3].shape, True),
+                np.abs(self.data[1] - AOA) < tolaoa if AOA is not None else np.full(self.data[3].shape, True)
+            )
+            )
+            xvarref = xvar[mask]
+            zvarref = self.ground_truth[key][mask]
+            ax.scatter(xvarref, zvarref, color='blue', marker='x', label=reference_label)
+
+        if validation_dataframe is not None:
+            dataref = unpack_RSM_data(validation_dataframe)
+            ref_mask = np.logical_and(
+            np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
+            np.logical_and(
+                np.abs(dataref[2] - J) < tolj if J is not None else np.full(dataref[3].shape, True),
+                np.abs(dataref[1] - AOA) < tolaoa if AOA is not None else np.full(dataref[3].shape, True)
+            )
+            )
+            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
+            xvarref = (dataref[1] if (DELTA_E is not None and J is not None) else dataref[2] if (DELTA_E is not None and AOA is not None) else dataref[3])[ref_mask]
+            ax.scatter(xvarref, zvarref, color='green', marker='o', label='Validation Points')
+
+        elif validation_dataframe == 'self' and self.validation_dataframe is not None:
             val_mask = np.logical_and(
             np.abs(self.validation_data[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(self.validation_data[3].shape, True),
             np.logical_and(
@@ -486,19 +501,6 @@ class ResponseSurfaceModel:
 
         elif self.validation_dataframe is None:
             print('Warning: attempting to plot validation dataset, but no validation points were specified')
-
-        elif validation_dataframe is not None:
-            dataref = unpack_RSM_data(validation_dataframe)
-            ref_mask = np.logical_and(
-            np.abs(dataref[3] - DELTA_E) < tolde if DELTA_E is not None else np.full(dataref[3].shape, True),
-            np.logical_and(
-                np.abs(dataref[2] - J) < tolj if J is not None else np.full(dataref[3].shape, True),
-                np.abs(dataref[1] - AOA) < tolaoa if AOA is not None else np.full(dataref[3].shape, True)
-            )
-            )
-            zvarref = reference_dataframe[key].to_numpy()[ref_mask]
-            xvarref = (dataref[1] if (DELTA_E is not None and J is not None) else dataref[2] if (DELTA_E is not None and AOA is not None) else dataref[3])[ref_mask]
-            ax.scatter(xvarref, zvarref, color='green', marker='o', label='Validation Points')
 
 
         # Create a grid to interpolate onto
@@ -515,6 +517,7 @@ class ResponseSurfaceModel:
         ax.set_ylabel(key)
         ax.legend()
         ax.grid()
+        plt.tight_layout()
         if save:
             plt.savefig('plots/RSM_1D_{}_{}.svg'.format(key, xlabel))
         else:
