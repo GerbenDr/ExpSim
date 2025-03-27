@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from scipy.interpolate import griddata
 from scipy.stats import norm
+from skimage import measure
 
 #TODO: update keys if relevant
 keys_to_model = ['CL', 'CD', 'CMpitch']
@@ -356,6 +357,68 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
+    def plot_isosurfaces(self, key, values, save=False, resolution=50):
+        """
+        Plot multiple isosurfaces for the given key and list of values.
+        The domain is sampled in a meshgrid between the bounds of self.data[i] for i=1, 2, 3.
+        """
+
+        # Define the bounds for the meshgrid
+        AOA_min, AOA_max = self.data[1].min(), self.data[1].max()
+        J_min, J_max = self.data[2].min(), self.data[2].max()
+        DELTA_E_min, DELTA_E_max = self.data[3].min(), self.data[3].max()
+
+        # Create a meshgrid
+        AOA = np.linspace(AOA_min, AOA_max, resolution)
+        J = np.linspace(J_min, J_max, resolution)
+        DELTA_E = np.linspace(DELTA_E_min, DELTA_E_max, resolution)
+        AOA_grid, J_grid, DELTA_E_grid = np.meshgrid(AOA, J, DELTA_E, indexing='ij')
+
+        # Evaluate the response surface model on the grid
+        RSM_values = self._evaluate_from_AJD(
+            self.coefficients[key], AOA_grid, J_grid, DELTA_E_grid
+        )
+
+        # Set up the plot
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Use a colormap to color the isosurfaces
+        cmap = plt.get_cmap('viridis')
+        norm = plt.Normalize(vmin=min(values), vmax=max(values))
+
+        for value in values:
+            # Compute the isosurface
+            verts, faces, _, _ = measure.marching_cubes(RSM_values, level=value, spacing=(
+                AOA[1] - AOA[0], J[1] - J[0], DELTA_E[1] - DELTA_E[0]))
+
+            # Scale vertices back to the original domain
+            verts[:, 0] = verts[:, 0] * (AOA_max - AOA_min) / (resolution - 1) + AOA_min
+            verts[:, 1] = verts[:, 1] * (J_max - J_min) / (resolution - 1) + J_min
+            verts[:, 2] = verts[:, 2] * (DELTA_E_max - DELTA_E_min) / (resolution - 1) + DELTA_E_min
+
+            # Plot the surface with color based on the value
+            ax.plot_trisurf(
+                verts[:, 0], verts[:, 1], verts[:, 2], triangles=faces,
+                color=cmap(norm(value)), alpha=0.6, edgecolor='none'
+            )
+
+        # Add a colorbar
+        mappable = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        mappable.set_array(values)
+        cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=10)
+        cbar.set_label(f'{key}')
+
+        ax.set_xlabel('AoA')
+        ax.set_ylabel('J')
+        ax.set_zlabel('DELTA_E')
+        # ax.set_title(f'Isosurfaces for {key}')
+        ax.grid()
+
+        if save:
+            plt.savefig(f'plots/{key}_isosurfaces.svg')
+        else:
+            plt.show()
 
 
     def plot_RSM_2D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
