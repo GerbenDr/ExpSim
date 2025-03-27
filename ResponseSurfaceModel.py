@@ -18,6 +18,8 @@ AOA_key = 'AoA_cor'
 DELTA_E_key = 'delta_e'
 J_key = 'J_M1'
 
+cmap_key = 'jet'
+
 def unpack_RSM_data(dataframe):
     AOA = dataframe[AOA_key].to_numpy()
     DELTA_E = dataframe[DELTA_E_key].to_numpy()
@@ -178,6 +180,9 @@ class ResponseSurfaceModel:
             print('z_beta_actual: {:.4f}, z_beta_bound:{:.4f}'.format(z_beta_actual, z_beta))
             print('Type 2 acceptable? {}'.format(z_beta_actual > z_beta))
             print(('Model accepted' if all([z_alpha_actual < z_alpha, z_beta_actual > z_beta]) else 'Model rejected') + ' for {}'.format(key))
+
+            print('Training loss: {:.8f}'.format(self.training_loss[key]))
+            print('Validation loss: {:.8f}'.format(self.validation_loss[key]))
         
         return
 
@@ -316,7 +321,7 @@ class ResponseSurfaceModel:
     def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J=1.8):
         fig, ax = plt.subplots(figsize=(4, 3))
 
-        colors = iter(plt.get_cmap('viridis')(np.linspace(0, 1, len(DELTA_E))))
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E))))
         
         for delta_e in DELTA_E:
             c=next(colors)
@@ -337,12 +342,12 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
-    def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 100)):
+    def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        colors = iter(plt.get_cmap('viridis')(np.linspace(0, 1, len(DELTA_E))))
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E))))
 
         X, Y = np.meshgrid(AOA, J)
         
@@ -350,7 +355,7 @@ class ResponseSurfaceModel:
             c=next(colors)
             da, dj, dde = self.get_derivatives(X, Y, np.full(X.shape, delta_e))
             deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
-            ax.plot(X, Y, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
+            ax.plot_surface(X, Y, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
         ax.set_xlabel('$\\alpha$')
@@ -364,12 +369,41 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
+    def plot_L__D_vs_alpha_J(self, save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E))))
+
+        X, Y = np.meshgrid(AOA, J)
+        
+        for delta_e in DELTA_E:
+            c=next(colors)
+            CL = self._evaluate_from_AJD(self.coefficients[CL_key], X, Y, np.full(X.shape, delta_e))
+            CD = self._evaluate_from_AJD(self.coefficients[CD_key], X, Y, np.full(X.shape, delta_e))
+
+            L__D = CL / CD
+            ax.plot_surface(X, Y, L__D, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
+
+        ax.set_xlabel('$\\alpha$')
+        ax.set_ylabel('$J$')
+        ax.set_zlabel(f'$L/D$')
+        ax.legend()
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/L__D_vs_alpha_J.svg')
+        else:
+            plt.show()
+
+
     def plot_trim_isosurface(self, save=False, resolution=50):
         """
         Plot a trim isosurface colored according to L/D.
         """
 
-        def map_colors(p3dc, func, cmap='viridis'):
+        def map_colors(p3dc, func, cmap=cmap_key):
                 """
             Color a tri-mesh according to a function evaluated in each barycentre.
 
@@ -381,7 +415,7 @@ class ResponseSurfaceModel:
                 """
                 
                 from matplotlib.cm import ScalarMappable, get_cmap
-                from matplotlib.colors import Normalize
+                from matplotlib.colors import Normalize, LogNorm
                 from numpy import array
 
                 # reconstruct the triangles from internal data
@@ -397,6 +431,7 @@ class ResponseSurfaceModel:
 
                 # usual stuff
                 norm = Normalize()
+                # norm = LogNorm()
                 colors = get_cmap(cmap)(norm(values))
 
                 # set the face colors of the Poly3DCollection
@@ -445,7 +480,15 @@ class ResponseSurfaceModel:
         )
 
         ########## change the face colors ####################
-        mappable = map_colors(p3dc, lambda a, j, d: self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) / self._evaluate_from_AJD(self.coefficients[CD_key], a, j, d), 'viridis')
+        mappable = map_colors(p3dc,
+                               lambda a, j, d: self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) /
+                                 self._evaluate_from_AJD(self.coefficients[CD_key], a, j, d),
+                                   cmap_key)
+        
+        # mappable = map_colors(p3dc,
+        #                        lambda a, j, d: np.abs(self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) /
+        #                          self._evaluate_from_AJD(self.coefficients[CD_key], a, j, d)),
+        #                            cmap_key)  
 
         # possibly add a colormap
         cbar = fig.colorbar(mappable, ax=ax, extend='both', pad=0.1)
@@ -493,7 +536,7 @@ class ResponseSurfaceModel:
         ax = fig.add_subplot(111, projection='3d')
 
         # Use a colormap to color the isosurfaces
-        cmap = plt.get_cmap('viridis')
+        cmap = plt.get_cmap(cmap_key)
         norm = plt.Normalize(vmin=min(values), vmax=max(values))
 
         for value in values:
