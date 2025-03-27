@@ -180,11 +180,26 @@ class ResponseSurfaceModel:
             print('z_beta_actual: {:.4f}, z_beta_bound:{:.4f}'.format(z_beta_actual, z_beta))
             print('Type 2 acceptable? {}'.format(z_beta_actual > z_beta))
             print(('Model accepted' if all([z_alpha_actual < z_alpha, z_beta_actual > z_beta]) else 'Model rejected') + ' for {}'.format(key))
-
-            print('Training loss: {:.8f}'.format(self.training_loss[key]))
-            print('Validation loss: {:.8f}'.format(self.validation_loss[key]))
         
         return
+    
+
+    def print_variance_report(self, K = 2*np.sqrt(2)):
+        for key in keys_to_model:
+            print('\n')
+            print('Variance report for {}:'.format(key))
+            print('Training loss: {:.8f}'.format(self.training_loss[key]))
+            print('Validation loss: {:.8f}'.format(self.validation_loss[key]))
+            print('Ratio:{:.8f}'.format(self.validation_loss[key] / self.training_loss[key]))
+
+            std_ave_tr = np.sqrt(self.training_loss[key])
+            std_ave_val = np.sqrt(self.validation_loss[key])
+
+            print('Training standard deviation: {:.8f}'.format(std_ave_tr))
+            print('Validation standard deviation: {:.8f}'.format(std_ave_val))
+
+            print('Model tolerance (est): {:.8f}'.format(K * std_ave_tr))
+
 
             # prob_alpha_error = 2*(1 - norm.cdf(mean_val * np.sqrt(N) / std_tr))
 

@@ -113,7 +113,9 @@ for i, mask in enumerate(c.mask_repetition_pointwise_inclusive):
 
 stds_mean = sum(stds) / N_repetition_points  # STDS for all variables
 for key in rsm.keys_to_model:
-    print(f'STDs for {key}: {stds_mean[key]:.8f}')
+    print(f'standard deviation for measurement {key}: {stds_mean[key]:.8f}')
+
+rsm_instance.print_variance_report() # compare model STD to measurement STD (should be around 1OoM higher)
 
 ## ---------------------------------------------------------------------
 ## Validation
