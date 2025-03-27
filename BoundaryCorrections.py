@@ -143,22 +143,23 @@ def subtract_model_off_data(df_unc, df_model_off, tail_on=True):
     
     # Iterate over each row in df_unc
     for index, row in df_unc.iterrows():
-        
+                
         # Find the two closest angles of attack in df_model_off
         upper = df_model_off[df_model_off['AoA'] >= row['AoA']].iloc[0]
         lower = df_model_off[df_model_off['AoA'] < row['AoA']].iloc[-1] if not df_model_off[df_model_off['AoA'] < row['AoA']].empty else df_model_off.iloc[0]
-        
+                
         # Interpolate the model-off data linearly between these two angles of attack
         # Calculate the interpolation factor
         factor = (row['AoA'] - lower['AoA']) / (upper['AoA'] - lower['AoA'])
-        
+                
         # Interpolate the model-off data
         interpolated = lower + factor * (upper - lower)
         
         # Append the interpolated data to the dataframe
         df_model_off_interpolated = pd.concat([df_model_off_interpolated, interpolated.to_frame().T], ignore_index=True)
-                
-    # Reset the df_unc index
+            
+    # # Reset the df_unc index
+    
     df_unc = df_unc.reset_index(drop=True)
 
     # Subtract the interpolated model-off data from the uncorrected data for each component
@@ -326,20 +327,20 @@ def apply_total_blockage_corrections(df, tail_on=True):
     # Calculate wake blockage correction: this is done for delta_e = 10 and -10 separately
     # TODO: Review selection of data -> drag coefficients for negative lift coefficients are diverging, so they have been left out for now (CL>0)
     if tail_on:
-        df_plus10 = df[(df['delta_e'] == 10) & (df['V'] > 35) & (df['CL'] > 0)]
-        df_min10 = df[(df['delta_e'] == -10) & (df['V'] > 35) & (df['CL'] > 0)]
-        df_V20 = df[(df['V'] > 18) & (df['V'] < 22) & (df['CL'] > 0)]
+        df_plus10 = df[(df['delta_e'] == 10) & (df['V'] > 35)]
+        df_min10 = df[(df['delta_e'] == -10) & (df['V'] > 35)]
+        df_V20 = df[(df['V'] > 18) & (df['V'] < 22)]
     
         # Apply the wake blockage correction to the delta = +10 data
-        CD0, a_CDi = get_drag_polar(df_plus10, visualise = True)
+        CD0, a_CDi = get_drag_polar(df_plus10[(df['CL'] > 0)], visualise = True)
         df_plus10 = calculate_wake_blockage_corrections(df_plus10, CD0, a_CDi)
         
         # Apply the wake blockage correction to the delta = -10 data
-        CD0, a_CDi = get_drag_polar(df_min10, visualise = True)
+        CD0, a_CDi = get_drag_polar(df_min10[(df['CL'] > 0)], visualise = True)
         df_min10 = calculate_wake_blockage_corrections(df_min10, CD0, a_CDi)
         
         # Apply the wake blockage correction to the V = 20 data
-        CD0, a_CDi = get_drag_polar(df_V20, visualise = True)
+        CD0, a_CDi = get_drag_polar(df_V20[(df['CL'] > 0)], visualise = True)
         df_V20 = calculate_wake_blockage_corrections(df_V20, CD0, a_CDi)
         
         # Combine the dataframes

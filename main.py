@@ -24,8 +24,11 @@ df_unc = pd.concat([df_minus_10, df_plus_10])
 # Save the combined data
 df_unc.to_csv('tunnel_data_unc/combined_data.txt', sep='\t', index=False)
 
-# Ditch row 31, which is incomplete
-df_unc = df_unc.drop(31)
+# Row 31 is missing data; for the integrity of the data, we will copy the values from row 30 to row 31
+# Row 31 should be excluded from the masks
+df_unc = df_unc.reset_index(drop=True)
+df_unc.loc[31] = df_unc.loc[30]
+
 
 # ---------------------------------------------------------------------
 ## Read the data from the model-off run
@@ -41,29 +44,29 @@ df_less_tail_unc = pd.read_csv('tunnel_data_unc/uncorrected_tailoff.txt', delimi
 ## BEFORE CORRECTIONS: Thrust/Drag Accounting
 ## ---------------------------------------------------------------------
 # Thrust/Drag Accounting: Calculate the thrust force from the uncorrected data.
-df_unc = thrust_correction(df_unc)
+df_thrust_cor = thrust_correction(df_unc)
 
 # Calculating the measured force in "drag-direction"
-df_unc['F_meas'] = df_unc['q'] * c.S_REF * df_unc['CD']
+df_thrust_cor['F_meas'] = df_thrust_cor['q'] * c.S_REF * df_thrust_cor['CD']
 
 # Calculating the drag force by subtracting the calculated thrust from the measured force in 'drag-direction'
-df_unc['Drag_Force'] = df_unc['F_meas'] + df_unc['thrust']
+df_thrust_cor['Drag_Force'] = df_thrust_cor['F_meas'] + df_thrust_cor['thrust']
 
 # Calculating the drag coefficient corrected for the thrust
-df_unc['CD_thrust_cor'] = df_unc['Drag_Force'] / (df_unc['q'] * c.S_REF)
+df_thrust_cor['CD_thrust_cor'] = df_thrust_cor['Drag_Force'] / (df_thrust_cor['q'] * c.S_REF)
 
 ## ---------------------------------------------------------------------
 ## BEFORE CORRECTIONS: Support Load Subtraction
 ## ---------------------------------------------------------------------
 # Support Load Subtraction: Subtract the strut loads from the uncorrected data using the model-less data.
-df_unc = bc.subtract_model_off_data(df_unc, df_less_model_unc, tail_on=True)
+df_sup_cor = bc.subtract_model_off_data(df_thrust_cor, df_less_model_unc, tail_on=True)
 df_less_tail_unc = bc.subtract_model_off_data(df_less_tail_unc, df_less_model_unc, tail_on=False)
 
 ## ---------------------------------------------------------------------
 ## Apply the blockage corrections to our measurement data
 # Solid blockage, wake blockage and slipstream blockage are included.
 ## ---------------------------------------------------------------------
-df = bc.apply_total_blockage_corrections(df_unc)
+df_block_cor = bc.apply_total_blockage_corrections(df_sup_cor)
 
 ## ---------------------------------------------------------------------
 ## Apply the lift interference corrections to our measurement data
@@ -73,24 +76,24 @@ df_less_tail = bc.apply_total_blockage_corrections(df_less_tail_unc, tail_on=Fal
 df_less_tail_cor = bc.apply_lift_interference_correction_less_tail(df_less_tail)
 
 # Then apply the lift interference corrections to the measurements using the tail-less data
-df = bc.apply_lift_interference_correction(df, df_less_tail_cor)
+df_lift_cor = bc.apply_lift_interference_correction(df_block_cor, df_less_tail_cor)
 
 ## ---------------------------------------------------------------------
 ## Write the corrected data to a file
 ## ---------------------------------------------------------------------
-df.to_csv('tunnel_data_cor/corrected_data.txt', sep='\t', index=False)
+df_lift_cor.to_csv('tunnel_data_cor/corrected_data.txt', sep='\t', index=False)
+df = df_lift_cor
 
 ## ---------------------------------------------------------------------
 ## Create the response surface model
 ## ---------------------------------------------------------------------
-rsm_instance = rsm.ResponseSurfaceModel(df)
-coeff, res = rsm_instance.fit()
-print(coeff, res)
+df_RSM = df.loc[c.mask_RSM]
+df_validation = df.loc[c.mask_validation]
 
-for key in ['CL', 'CD', 'CMpitch']:
-    rsm.plot_RSM(key=key, DELTA_E=-10, save=True, reference_dataframe='self')
-    rsm.plot_RSM(key=key, AOA=7, save=True, reference_dataframe='self')
-    rsm.plot_RSM(key=key, J=1.8, save=True, reference_dataframe='self')
+rsm_instance = rsm.ResponseSurfaceModel(df_RSM, df_validation)
+
+coeff, res, loss, deltas = rsm_instance.fit()
+print(coeff, res, loss, deltas)
 
 ## ---------------------------------------------------------------------
 ## Extract relevant parameters from response surface model
