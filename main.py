@@ -54,6 +54,9 @@ df_thrust_cor['Drag_Force'] = df_thrust_cor['F_meas'] + df_thrust_cor['thrust']
 
 # Calculating the drag coefficient corrected for the thrust
 df_thrust_cor['CD_thrust_cor'] = df_thrust_cor['Drag_Force'] / (df_thrust_cor['q'] * c.S_REF)
+df_thrust_cor['TC_thrust_cor'] = df_thrust_cor['thrust'] / (2 * df_thrust_cor['q'] * c.D_PROP**2)  # aircraft reference
+df_thrust_cor['CT_thrust_cor'] = df_thrust_cor['thrust'] / (df_thrust_cor['rho'] * df_thrust_cor['rpsM1']**2 * c.D_PROP**4)  # rotor reference
+
 
 ## ---------------------------------------------------------------------
 ## BEFORE CORRECTIONS: Support Load Subtraction
@@ -129,21 +132,21 @@ rsm_instance.print_hypothesis_test_results()
 ## ---------------------------------------------------------------------
 ## Create relevant plots
 ## ---------------------------------------------------------------------
-
 # other plots available under rsm class
 rsm_instance.plot_trim_isosurface(resolution=20, save=saveallplots)
 rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 0, 10], save=saveallplots)
 
 for key in rsm.keys_to_model:
     rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.6, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
+    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, AOA=2, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
     rsm_instance.plot_RSM_2D(save=saveallplots, key=key, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
 
     rsm_instance.plot_isosurfaces(key, save=saveallplots, n_surfaces = 10)
     rsm_instance.significance_histogram(key, save=saveallplots)
 
 
-    rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
-    rsm_instance.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
+    rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[0], J=[1.6, 1.8, 2.0, 2.2, 2.4])
+    rsm_instance.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[0])
     rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='delta_e' , DELTA_E=[0], J=[1.6, 1.8, 2.0, 2.2, 2.4])
     rsm_instance.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='delta_e' , DELTA_E=[0])
     rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='J' , DELTA_E=[-10, 0,  10])

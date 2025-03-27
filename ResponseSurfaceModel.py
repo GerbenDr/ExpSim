@@ -10,10 +10,14 @@ from skimage import measure
 
 #TODO: update keys if relevant
 # keys_to_model = ['CL', 'CD', 'CMpitch']
-keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2']
+keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2', 'TC_thrust_cor', 'CT_thrust_cor']
 CL_key = keys_to_model[0]
 CD_key = keys_to_model[1]
 CMpitch_key = keys_to_model[2]
+
+TC_key = keys_to_model[3]
+CT_key = keys_to_model[4]
+
 AOA_key = 'AoA_cor'
 DELTA_E_key = 'delta_e'
 J_key = 'J_M1'
@@ -25,7 +29,10 @@ cmap_key = 'jet'
 fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$',
                 #  AOA_key : '$\\alpha$, [$^\circ$]',
                 AOA_key : '$\\alpha$',
-                   DELTA_E_key : '$\delta_e$', J_key : '$J$'}
+                   DELTA_E_key : '$\delta_e$', J_key : '$J$',
+                   TC_key : '$T_C = T / \\rho V^2 D^2$',
+                   CT_key : '$C_T = T / \\rho n^2 D^4$'
+                   }
 
 def unpack_RSM_data(dataframe):
     AOA = dataframe[AOA_key].to_numpy()
@@ -760,7 +767,7 @@ class ResponseSurfaceModel:
             plt.show()
         plt.clf()
 
-    def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
+    def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.01, tolj=0.01, reference_label='Reference Points'):
         """
         plot a 1D slice of the response surface model
         you MUST set at least two of DELTA_E, AOA, or J to a value
