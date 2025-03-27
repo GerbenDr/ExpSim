@@ -19,6 +19,8 @@ DELTA_E_key = 'delta_e'
 J_key = 'J_M1'
 
 cmap_key = 'jet'
+# cmap_key = 'viridis'
+
 
 fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$',
                 #  AOA_key : '$\\alpha$, [$^\circ$]',
@@ -256,6 +258,7 @@ class ResponseSurfaceModel:
             plt.savefig('plots/significance_{}.svg'.format(key))
         else:
             plt.show()
+        plt.clf()
 
     def get_derivatives(self, AOA, J, DELTA_E):
         
@@ -338,29 +341,34 @@ class ResponseSurfaceModel:
         
         return dalpha, dj, dde
 
-    def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J=1.8):
-        fig, ax = plt.subplots(figsize=(4, 3))
+    def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J=[1.6]):
+        fig, ax = plt.subplots(figsize=(8, 3))
 
-        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E))))
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(J) * len(DELTA_E))))
         
         for delta_e in DELTA_E:
-            c=next(colors)
-            da, dj, dde = self.get_derivatives(AOA, np.full(AOA.shape, J), np.full(AOA.shape, delta_e))
+            for j in J:
+                c=next(colors)
+                da, dj, dde = self.get_derivatives(AOA, np.full(AOA.shape, j), np.full(AOA.shape, delta_e))
 
-            deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
-            ax.plot(AOA, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c)
+                deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+                ax.plot(AOA, deriv, label=f'$\delta_e = {delta_e:.0f}$, $J = {j:.2f}$', color=c)
 
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        derivative_key = AOA_key if derivative == 'alpha' else J_key if derivative == 'J' else DELTA_E_key
+
         ax.set_xlabel(fancy_labels[AOA_key])
-        ax.set_ylabel(f'$d{key}/d{var}$')
-        ax.legend()
+        ax.set_ylabel(f'd{fancy_labels[key]} / d{fancy_labels[derivative_key]}')
+        ax.legend(loc='lower left', bbox_to_anchor=(1.0, 0.05),
+          ncol=1, fancybox=True, shadow=True)
         ax.grid()
         plt.tight_layout()
         if save:
             plt.savefig('plots/{}_{}_vs_alpha.svg'.format(key, var))
         else:
             plt.show()
+        plt.clf()
 
     def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
 
@@ -378,16 +386,22 @@ class ResponseSurfaceModel:
             ax.plot_surface(X, Y, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        derivative_key = AOA_key if derivative == 'alpha' else J_key if derivative == 'J' else DELTA_E_key
+
         ax.set_xlabel(fancy_labels[AOA_key])
         ax.set_ylabel(fancy_labels[J_key])
-        ax.set_zlabel(f'$d{key}/d{var}$')
-        ax.legend()
+        ax.set_zlabel(f'd{fancy_labels[key]} / d{fancy_labels[derivative_key]}')
+        if len(DELTA_E) > 1:
+            ax.legend()
+
         ax.grid()
         plt.tight_layout()
         if save:
             plt.savefig('plots/{}_{}_vs_alpha_J.svg'.format(key, var))
         else:
             plt.show()
+
+        plt.clf()
 
     def plot_L__D_vs_alpha_J(self, save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
 
@@ -416,6 +430,7 @@ class ResponseSurfaceModel:
             plt.savefig('plots/L__D_vs_alpha_J.svg')
         else:
             plt.show()
+        plt.clf()
 
 
     def plot_trim_isosurface(self, save=False, resolution=50):
@@ -486,6 +501,7 @@ class ResponseSurfaceModel:
         
         # Set up the plot
         fig = plt.figure(figsize=(4, 3))
+        # fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection='3d')
 
         # Scale vertices back to the original domain
@@ -511,7 +527,7 @@ class ResponseSurfaceModel:
         #                            cmap_key)  
 
         # possibly add a colormap
-        cbar = fig.colorbar(mappable, ax=ax, pad=0.2)
+        cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=10, pad=0.2)
         cbar.set_label(f'L/D')
 
         ax.set_xlabel(fancy_labels[AOA_key])
@@ -528,8 +544,9 @@ class ResponseSurfaceModel:
             plt.savefig('plots/trim_isosurface.svg')
         else:
             plt.show()
+        plt.clf()
 
-    def plot_isosurfaces(self, key, values=None, save=False, resolution=50, n_surfaces = 7):
+    def plot_isosurfaces(self, key, values=None, save=False, resolution=10, n_surfaces = 7):
         """
         Plot multiple isosurfaces for the given key and list of values.
         The domain is sampled in a meshgrid between the bounds of self.data[i] for i=1, 2, 3.
@@ -552,7 +569,8 @@ class ResponseSurfaceModel:
         )
 
         # Set up the plot
-        fig = plt.figure()
+        fig = plt.figure(figsize=(4, 3))
+        # fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection='3d')
 
         if values is None:
@@ -603,6 +621,9 @@ class ResponseSurfaceModel:
             plt.savefig(f'plots/{key}_isosurfaces.svg')
         else:
             plt.show()
+        plt.clf()
+
+    
 
     def plot_low_Re_comp(self, key, low_re_df, save=False, J=1.8, DELTA_E=-10, tolde = 1e-3, tolj=0.1, plot_training=True):
 
@@ -658,6 +679,7 @@ class ResponseSurfaceModel:
             plt.savefig('plots/low_Re_comp_{}.svg'.format(key))
         else:
             plt.show()
+        plt.clf()
 
 
     def plot_RSM_2D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
@@ -736,6 +758,7 @@ class ResponseSurfaceModel:
             plt.savefig('plots/RSM_2D_{}_{}_{}.svg'.format(key, xlabel, ylabel))
         else:
             plt.show()
+        plt.clf()
 
     def plot_RSM_1D(self, key, reference_dataframe=None, validation_dataframe = None, save=False, DELTA_E=None, AOA=None, J=None, tolde = 1e-3, tolaoa=0.1, tolj=0.1, reference_label='Reference Points'):
         """
@@ -824,6 +847,7 @@ class ResponseSurfaceModel:
             plt.savefig('plots/RSM_1D_{}_{}.svg'.format(key, xlabel))
         else:
             plt.show()
+        plt.clf()
 
 
 
