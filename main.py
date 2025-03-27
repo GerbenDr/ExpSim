@@ -92,25 +92,51 @@ df_validation = df.loc[c.mask_validation]
 
 rsm_instance = rsm.ResponseSurfaceModel(df_RSM, df_validation)
 
+## ---------------------------------------------------------------------
+## Extract relevant parameters from response surface model
+## ---------------------------------------------------------------------
 coeff, res, loss, deltas = rsm_instance.fit()
 print(coeff, res, loss, deltas)
 
 ## ---------------------------------------------------------------------
-## Extract relevant parameters from response surface model
-## ---------------------------------------------------------------------
-# TODO
-
-## ---------------------------------------------------------------------
 ## Calculate standard deviation of measurements
 ## ---------------------------------------------------------------------
-# TODO
+N_repetition_points = len(c.mask_repetition_pointwise_inclusive)
+
+stds = [0]*N_repetition_points
+means = [0]*N_repetition_points
+
+for i, mask in enumerate(c.mask_repetition_pointwise_inclusive):
+    df_repetition = df.loc[mask]
+    stds[i] = df_repetition.std(ddof=1) 
+    means[i] = df_repetition.mean()
+
+stds_mean = sum(stds) / N_repetition_points  # STDS for all variables
+for key in rsm.keys_to_model:
+    print(f'STDs for {key}: {stds_mean[key]:.8f}')
 
 ## ---------------------------------------------------------------------
-## Validation Points
+## Validation
 ## ---------------------------------------------------------------------
-# TODO
+rsm_instance.print_hypothesis_test_results()
 
 ## ---------------------------------------------------------------------
 ## Create relevant plots
 ## ---------------------------------------------------------------------
-# TODO
+
+# other plots available under rsm class
+rsm_instance.plot_trim_isosurface(resolution=10, save=True)
+
+rsm_instance.plot_isosurfaces('CL_cor2', values=[-0.25, 0, 0.25, 0.5, 0.75], save=True)
+
+saveallplots = True
+
+for key in rsm.keys_to_model:
+
+
+
+    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.6, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
+
+    rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10], J=1.6)
+    rsm_instance.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
+    rsm_instance.significance_histogram(key, save=saveallplots)

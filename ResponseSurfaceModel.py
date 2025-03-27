@@ -9,12 +9,19 @@ from scipy.stats import norm
 from skimage import measure
 
 #TODO: update keys if relevant
-keys_to_model = ['CL', 'CD', 'CMpitch']
+# keys_to_model = ['CL', 'CD', 'CMpitch']
+keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2']
+CL_key = keys_to_model[0]
+CD_key = keys_to_model[1]
+CMpitch_key = keys_to_model[2]
+AOA_key = 'AoA_cor'
+DELTA_E_key = 'delta_e'
+J_key = 'J_M1'
 
 def unpack_RSM_data(dataframe):
-    AOA = dataframe['AoA'].to_numpy()
-    DELTA_E = dataframe['delta_e'].to_numpy()
-    J = 0.5 * (dataframe['J_M1'] +  dataframe['J_M2']).to_numpy()
+    AOA = dataframe[AOA_key].to_numpy()
+    DELTA_E = dataframe[DELTA_E_key].to_numpy()
+    J = dataframe[J_key].to_numpy()
     data = np.vstack((
             np.ones(AOA.shape),
             AOA,
@@ -411,14 +418,14 @@ class ResponseSurfaceModel:
 
         # Evaluate the response surface model on the grid
         RSM_CMpitch = self._evaluate_from_AJD(
-            self.coefficients['CMpitch'], AOA_grid, J_grid, DELTA_E_grid
+            self.coefficients[CMpitch_key], AOA_grid, J_grid, DELTA_E_grid
         )
-        RSM_CL = self._evaluate_from_AJD(
-            self.coefficients['CL'], AOA_grid, J_grid, DELTA_E_grid
-        )
-        RSM_CD = self._evaluate_from_AJD(
-            self.coefficients['CD'], AOA_grid, J_grid, DELTA_E_grid
-        )
+        # RSM_CL = self._evaluate_from_AJD(
+        #     self.coefficients[CL_key], AOA_grid, J_grid, DELTA_E_grid
+        # )
+        # RSM_CD = self._evaluate_from_AJD(
+        #     self.coefficients[CD_key], AOA_grid, J_grid, DELTA_E_grid
+        # )
 
         verts, faces, _, _ = measure.marching_cubes(RSM_CMpitch, level=0)
         
@@ -438,10 +445,11 @@ class ResponseSurfaceModel:
         )
 
         ########## change the face colors ####################
-        mappable = map_colors(p3dc, lambda a, j, d: self._evaluate_from_AJD(self.coefficients['CL'], a, j, d) / self._evaluate_from_AJD(self.coefficients['CD'], a, j, d), 'viridis')
+        mappable = map_colors(p3dc, lambda a, j, d: self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) / self._evaluate_from_AJD(self.coefficients[CD_key], a, j, d), 'viridis')
 
         # possibly add a colormap
-        plt.colorbar(mappable, ax=ax)
+        cbar = fig.colorbar(mappable, ax=ax, extend='both', pad=0.1)
+        cbar.set_label(f'L/D')
 
         ax.set_xlabel('AoA')
         ax.set_ylabel('J')
@@ -451,6 +459,7 @@ class ResponseSurfaceModel:
         ax.set_ylim(J_min, J_max)
         ax.set_zlim(DELTA_E_min, DELTA_E_max)
         ax.grid()
+        plt.tight_layout()
 
         if save:
             plt.savefig('plots/trim_isosurface.svg')
