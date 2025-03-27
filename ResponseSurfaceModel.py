@@ -20,7 +20,10 @@ J_key = 'J_M1'
 
 cmap_key = 'jet'
 
-fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$', AOA_key : '$\\alpha$, [$^\circ$]', DELTA_E_key : '$\delta_e$', J_key : '$J$'}
+fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$',
+                #  AOA_key : '$\\alpha$, [$^\circ$]',
+                AOA_key : '$\\alpha$',
+                   DELTA_E_key : '$\delta_e$', J_key : '$J$'}
 
 def unpack_RSM_data(dataframe):
     AOA = dataframe[AOA_key].to_numpy()
@@ -638,8 +641,7 @@ class ResponseSurfaceModel:
             zvarref = self.ground_truth[key][mask]
             ax.scatter(xvarref, zvarref, color='blue', marker='x')
         
-        ax.set_xlabel('fancy_labels[AOA_key]')
-
+        ax.set_xlabel(fancy_labels[AOA_key])
         ax.set_ylabel(fancy_labels[key])
         ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
           ncol=1, fancybox=True, shadow=True)
