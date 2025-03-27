@@ -20,6 +20,8 @@ J_key = 'J_M1'
 
 cmap_key = 'jet'
 
+fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$', AOA_key : '$\\alpha$, [$^\circ$]', DELTA_E_key : '$\delta_e$', J_key : '$J$'}
+
 def unpack_RSM_data(dataframe):
     AOA = dataframe[AOA_key].to_numpy()
     DELTA_E = dataframe[DELTA_E_key].to_numpy()
@@ -347,7 +349,7 @@ class ResponseSurfaceModel:
 
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
-        ax.set_xlabel('$\\alpha$')
+        ax.set_xlabel(fancy_labels[AOA_key])
         ax.set_ylabel(f'$d{key}/d{var}$')
         ax.legend()
         ax.grid()
@@ -373,8 +375,8 @@ class ResponseSurfaceModel:
             ax.plot_surface(X, Y, deriv, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
-        ax.set_xlabel('$\\alpha$')
-        ax.set_ylabel('$J$')
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[J_key])
         ax.set_zlabel(f'$d{key}/d{var}$')
         ax.legend()
         ax.grid()
@@ -401,8 +403,8 @@ class ResponseSurfaceModel:
             L__D = CL / CD
             ax.plot_surface(X, Y, L__D, label=f'$\delta_e = {delta_e:.0f}$', color=c, alpha = 0.7)
 
-        ax.set_xlabel('$\\alpha$')
-        ax.set_ylabel('$J$')
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[J_key])
         ax.set_zlabel(f'$L/D$')
         ax.legend()
         ax.grid()
@@ -509,9 +511,9 @@ class ResponseSurfaceModel:
         cbar = fig.colorbar(mappable, ax=ax, extend='both', pad=0.1)
         cbar.set_label(f'L/D')
 
-        ax.set_xlabel('AoA')
-        ax.set_ylabel('J')
-        ax.set_zlabel('DELTA_E')
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[J_key])
+        ax.set_zlabel('$\delta_e$')
 
         ax.set_xlim(AOA_min, AOA_max)
         ax.set_ylim(J_min, J_max)
@@ -578,9 +580,9 @@ class ResponseSurfaceModel:
         cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=10)
         cbar.set_label(f'{key}')
 
-        ax.set_xlabel('AoA')
-        ax.set_ylabel('J')
-        ax.set_zlabel('DELTA_E')
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[J_key])
+        ax.set_zlabel('$\delta_e$')
 
         ax.set_xlim(AOA_min,AOA_max)
         ax.set_ylim(J_min,J_max)
@@ -590,6 +592,62 @@ class ResponseSurfaceModel:
 
         if save:
             plt.savefig(f'plots/{key}_isosurfaces.svg')
+        else:
+            plt.show()
+
+    def plot_low_Re_comp(self, key, low_re_df, save=False, J=1.8, DELTA_E=-10, tolde = 1e-3, tolj=0.1, plot_training=True):
+
+        MAC = 0.165
+        RE_HIGH = 1 /  1.48 / 1e-5 * MAC * 40
+        RE_LOW = 1 /  1.48 / 1e-5 * MAC * 20
+
+        fig, ax = plt.subplots(figsize=(4, 3))
+
+        dataref = unpack_RSM_data(low_re_df)
+        ref_mask = np.logical_and(np.abs(dataref[3] - DELTA_E) < tolde, np.abs(dataref[2] - J) < tolj)  # should be full, but doesn't hurt to double check
+
+        zvarref = low_re_df[key].to_numpy()[ref_mask]
+        xvarref = dataref[1][ref_mask]
+
+        ax.scatter(xvarref, zvarref, color='red', marker='o')
+
+        if key == CD_key: # if CD, use quadratic fit
+            coeffs = np.polyfit(xvarref, zvarref, 2)
+
+            x_fit = np.linspace(min(xvarref), max(xvarref), 100)
+            z_fit = np.polyval(coeffs, x_fit)
+            label = f'Quadratic fit, Re_{{MAC}} = {RE_LOW:.2}'
+        else: # use linear fit
+            coeffs = np.polyfit(xvarref, zvarref, 1)
+
+            x_fit = np.linspace(min(xvarref), max(xvarref), 100)
+            z_fit = np.polyval(coeffs, x_fit)
+            label = f'Linear fit, $Re_{{MAC}} = {RE_LOW:.2}$'
+
+        ax.plot(x_fit, z_fit, color='red', linestyle='--', label=label)
+   
+        x = np.linspace(-4, 7, 100)
+
+        z = self._evaluate_from_AJD(self.coefficients[key], x, np.full(x.shape, J), np.full(x.shape, DELTA_E))
+        ax.plot(x, z, color='blue', label=f'RSM, $Re_{{MAC}} = {RE_HIGH:.2}$')
+
+
+        if plot_training:
+            mask = np.logical_and(np.abs(self.data[3] - DELTA_E) < tolde, np.abs(self.data[2] - J) < tolj)
+            xvarref = self.data[1][mask]
+            zvarref = self.ground_truth[key][mask]
+            ax.scatter(xvarref, zvarref, color='blue', marker='x')
+        
+        ax.set_xlabel('fancy_labels[AOA_key]')
+
+        ax.set_ylabel(fancy_labels[key])
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
+          ncol=1, fancybox=True, shadow=True)
+        
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/low_Re_comp_{}.svg'.format(key))
         else:
             plt.show()
 
@@ -658,12 +716,12 @@ class ResponseSurfaceModel:
         ax.plot_surface(X, Y, Z, color='red', alpha=0.3, label='Response Surface Model')
 
 
-        xlabel = 'AoA' if DELTA_E is not None else 'AoA' if J is not None else 'J'
-        ylabel = 'J' if DELTA_E is not None else 'DELTA_E' if J is not None else 'DELTA_E'
+        xlabel = AOA_key if DELTA_E is not None else AOA_key if J is not None else J_key
+        ylabel = J_key if DELTA_E is not None else DELTA_E_key if J is not None else DELTA_E_key
 
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_zlabel(key)
+        ax.set_xlabel(fancy_labels[xlabel])
+        ax.set_ylabel(fancy_labels[ylabel])
+        ax.set_zlabel(fancy_labels[key])
         ax.legend()
         ax.grid()
         if save:
@@ -747,10 +805,10 @@ class ResponseSurfaceModel:
         ax.plot(X, model_var, color='red', label='Response Surface Model')
 
 
-        xlabel = 'AoA' if (DELTA_E is not None and J is not None) else 'J' if (DELTA_E is not None and AOA is not None) else 'DELTA_E'
+        xlabel = AOA_key if (DELTA_E is not None and J is not None) else J_key if (DELTA_E is not None and AOA is not None) else DELTA_E_key
 
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(key)
+        ax.set_xlabel(fancy_labels[xlabel])
+        ax.set_ylabel(fancy_labels[key])
         ax.legend()
         ax.grid()
         plt.tight_layout()

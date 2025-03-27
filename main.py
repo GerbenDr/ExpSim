@@ -90,6 +90,8 @@ df = df_lift_cor
 df_RSM = df.loc[c.mask_RSM]
 df_validation = df.loc[c.mask_validation]
 
+df_low_Re = df.loc[c.mask_low_Re]
+
 rsm_instance = rsm.ResponseSurfaceModel(df_RSM, df_validation)
 
 ## ---------------------------------------------------------------------
@@ -120,7 +122,11 @@ rsm_instance.print_variance_report() # compare model STD to measurement STD (sho
 ## ---------------------------------------------------------------------
 ## Validation
 ## ---------------------------------------------------------------------
+
+saveallplots = True
+
 rsm_instance.print_hypothesis_test_results()
+rsm_instance.significance_histogram(key, save=saveallplots)
 
 ## ---------------------------------------------------------------------
 ## Create relevant plots
@@ -131,12 +137,11 @@ rsm_instance.plot_trim_isosurface(resolution=50, save=True)
 rsm_instance.plot_isosurfaces('CL_cor2', values=[-0.25, 0, 0.25, 0.5, 0.75], save=True)
 rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 5, 0, 5, 10], save=True)
 
-saveallplots = True
-
 for key in rsm.keys_to_model:
     rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.6, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
     rsm_instance.plot_RSM_2D(save=saveallplots, key=key, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
 
     rsm_instance.plot_derivative_vs_alpha(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10], J=1.6)
     rsm_instance.plot_derivative_vs_alpha_J(save=saveallplots,key=key,derivative='alpha' , DELTA_E=[-10, 0,  10])
-    rsm_instance.significance_histogram(key, save=saveallplots)
+
+    rsm_instance.plot_low_Re_comp(key, save=saveallplots, low_re_df = df_low_Re)

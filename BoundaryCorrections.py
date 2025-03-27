@@ -296,7 +296,7 @@ def calculate_slipstream_blockage_corrections(df, tail_on=True):
     return df
     
 ## Method to apply the total blockage corrections
-def apply_total_blockage_corrections(df, tail_on=True):
+def apply_total_blockage_corrections(df, tail_on=True, visualise=False):
     """
     Apply total blockage corrections to the given dataframe.
     This function calculates the total blockage corrections by summing the solid, wake, and 
@@ -332,22 +332,22 @@ def apply_total_blockage_corrections(df, tail_on=True):
         df_V20 = df[(df['V'] > 18) & (df['V'] < 22)]
     
         # Apply the wake blockage correction to the delta = +10 data
-        CD0, a_CDi = get_drag_polar(df_plus10[(df['CL'] > 0)], visualise = True)
+        CD0, a_CDi = get_drag_polar(df_plus10[(df['CL'] > 0)], visualise = visualise)
         df_plus10 = calculate_wake_blockage_corrections(df_plus10, CD0, a_CDi)
         
         # Apply the wake blockage correction to the delta = -10 data
-        CD0, a_CDi = get_drag_polar(df_min10[(df['CL'] > 0)], visualise = True)
+        CD0, a_CDi = get_drag_polar(df_min10[(df['CL'] > 0)], visualise = visualise)
         df_min10 = calculate_wake_blockage_corrections(df_min10, CD0, a_CDi)
         
         # Apply the wake blockage correction to the V = 20 data
-        CD0, a_CDi = get_drag_polar(df_V20[(df['CL'] > 0)], visualise = True)
+        CD0, a_CDi = get_drag_polar(df_V20[(df['CL'] > 0)], visualise = visualise)
         df_V20 = calculate_wake_blockage_corrections(df_V20, CD0, a_CDi)
         
         # Combine the dataframes
         df = pd.concat([df_plus10, df_min10, df_V20])
     else:
         df = df[(df['V'] > 35)]
-        CD0, a_CDi = get_drag_polar(df, visualise = True, tail_on=False)
+        CD0, a_CDi = get_drag_polar(df, visualise = visualise, tail_on=False)
         df = calculate_wake_blockage_corrections(df, CD0, a_CDi, tail_on=False)
     
     # Calculate slipstream blockage correction
