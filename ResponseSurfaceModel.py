@@ -357,6 +357,106 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
+    def plot_trim_isosurface(self, save=False, resolution=50):
+        """
+        Plot a trim isosurface colored according to L/D.
+        """
+
+        def map_colors(p3dc, func, cmap='viridis'):
+                """
+            Color a tri-mesh according to a function evaluated in each barycentre.
+
+                p3dc: a Poly3DCollection, as returned e.g. by ax.plot_trisurf
+                func: a single-valued function of 3 arrays: x, y, z
+                cmap: a colormap NAME, as a string
+
+                Returns a ScalarMappable that can be used to instantiate a colorbar.
+                """
+                
+                from matplotlib.cm import ScalarMappable, get_cmap
+                from matplotlib.colors import Normalize
+                from numpy import array
+
+                # reconstruct the triangles from internal data
+                x, y, z, _ = p3dc._vec
+                slices = p3dc._segslices
+                triangles = array([array((x[s],y[s],z[s])).T for s in slices])
+
+                # compute the barycentres for each triangle
+                xb, yb, zb = triangles.mean(axis=1).T
+                
+                # compute the function in the barycentres
+                values = func(xb, yb, zb)
+
+                # usual stuff
+                norm = Normalize()
+                colors = get_cmap(cmap)(norm(values))
+
+                # set the face colors of the Poly3DCollection
+                p3dc.set_fc(colors)
+
+                # if the caller wants a colorbar, they need this
+                return ScalarMappable(cmap=cmap, norm=norm)
+
+        # Define the bounds for the meshgrid
+        AOA_min, AOA_max = self.data[1].min(), self.data[1].max()
+        J_min, J_max = self.data[2].min(), self.data[2].max()
+        DELTA_E_min, DELTA_E_max = self.data[3].min(), self.data[3].max()
+
+        # Create a meshgrid
+        AOA = np.linspace(AOA_min, AOA_max, resolution)
+        J = np.linspace(J_min, J_max, resolution)
+        DELTA_E = np.linspace(DELTA_E_min, DELTA_E_max, resolution)
+        AOA_grid, J_grid, DELTA_E_grid = np.meshgrid(AOA, J, DELTA_E, indexing='ij')
+
+        # Evaluate the response surface model on the grid
+        RSM_CMpitch = self._evaluate_from_AJD(
+            self.coefficients['CMpitch'], AOA_grid, J_grid, DELTA_E_grid
+        )
+        RSM_CL = self._evaluate_from_AJD(
+            self.coefficients['CL'], AOA_grid, J_grid, DELTA_E_grid
+        )
+        RSM_CD = self._evaluate_from_AJD(
+            self.coefficients['CD'], AOA_grid, J_grid, DELTA_E_grid
+        )
+
+        verts, faces, _, _ = measure.marching_cubes(RSM_CMpitch, level=0)
+        
+        # Set up the plot
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Scale vertices back to the original domain
+        verts[:, 0] = verts[:, 0] * (AOA_max - AOA_min) / (resolution - 1) + AOA_min
+        verts[:, 1] = verts[:, 1] * (J_max - J_min) / (resolution - 1) + J_min
+        verts[:, 2] = verts[:, 2] * (DELTA_E_max - DELTA_E_min) / (resolution - 1) + DELTA_E_min
+
+        p3dc  = ax.plot_trisurf(
+            verts[:, 0], verts[:, 1], verts[:, 2]
+            # , triangles=faces,
+            , alpha=0.6, edgecolor='none'
+        )
+
+        ########## change the face colors ####################
+        mappable = map_colors(p3dc, lambda a, j, d: self._evaluate_from_AJD(self.coefficients['CL'], a, j, d) / self._evaluate_from_AJD(self.coefficients['CD'], a, j, d), 'viridis')
+
+        # possibly add a colormap
+        plt.colorbar(mappable, ax=ax)
+
+        ax.set_xlabel('AoA')
+        ax.set_ylabel('J')
+        ax.set_zlabel('DELTA_E')
+
+        ax.set_xlim(AOA_min, AOA_max)
+        ax.set_ylim(J_min, J_max)
+        ax.set_zlim(DELTA_E_min, DELTA_E_max)
+        ax.grid()
+
+        if save:
+            plt.savefig('plots/trim_isosurface.svg')
+        else:
+            plt.show()
+
     def plot_isosurfaces(self, key, values, save=False, resolution=50):
         """
         Plot multiple isosurfaces for the given key and list of values.
@@ -389,8 +489,10 @@ class ResponseSurfaceModel:
 
         for value in values:
             # Compute the isosurface
-            verts, faces, _, _ = measure.marching_cubes(RSM_values, level=value, spacing=(
-                AOA[1] - AOA[0], J[1] - J[0], DELTA_E[1] - DELTA_E[0]))
+            verts, faces, _, _ = measure.marching_cubes(RSM_values, level=value, 
+                                                        # spacing=(
+                # AOA[1] - AOA[0], J[1] - J[0], DELTA_E[1] - DELTA_E[0])
+                )
 
             # Scale vertices back to the original domain
             verts[:, 0] = verts[:, 0] * (AOA_max - AOA_min) / (resolution - 1) + AOA_min
@@ -412,6 +514,10 @@ class ResponseSurfaceModel:
         ax.set_xlabel('AoA')
         ax.set_ylabel('J')
         ax.set_zlabel('DELTA_E')
+
+        ax.set_xlim(AOA_min,AOA_max)
+        ax.set_ylim(J_min,J_max)
+        ax.set_zlim(DELTA_E_min,DELTA_E_max)
         # ax.set_title(f'Isosurfaces for {key}')
         ax.grid()
 

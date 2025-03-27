@@ -49,8 +49,9 @@ for i, mask in enumerate(c.mask_repetition_pointwise_inclusive):
 stds_mean = sum(stds) / N_repetition_points
 
 RSM = rsm.ResponseSurfaceModel(df_RSM, df_validation)
-RSM.plot_isosurfaces('CL', values=[0, 0.25, 0.5, 0.75])
-RSM.plot_isosurfaces('CMpitch', values=[-0.1, 0, 0.1, 0.2, 0.3])
+# RSM.plot_isosurfaces('CL', values=[0, 0.25, 0.5, 0.75], resolution=20)
+# RSM.plot_isosurfaces('CMpitch', values=[-0.1, 0, 0.1, 0.2, 0.3])
+RSM.plot_trim_isosurface(resolution=10)
 
 # print(np.trace(RSM.coefficient_covariance))
 # print(np.trace(RSM.prediction_covariance))
