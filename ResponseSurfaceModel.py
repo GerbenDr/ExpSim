@@ -246,7 +246,7 @@ class ResponseSurfaceModel:
                 #  label='invalid model fit'
                  )
 
-        ax.set_xlabel('residual = ground truth - prediction')
+        ax.set_xlabel('residual')
         ax.set_ylabel('probability density')
         ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
           ncol=1, fancybox=True, shadow=True)
@@ -485,7 +485,7 @@ class ResponseSurfaceModel:
         verts, faces, _, _ = measure.marching_cubes(RSM_CMpitch, level=0)
         
         # Set up the plot
-        fig = plt.figure()
+        fig = plt.figure(figsize=(4, 3))
         ax = fig.add_subplot(111, projection='3d')
 
         # Scale vertices back to the original domain
@@ -496,7 +496,7 @@ class ResponseSurfaceModel:
         p3dc  = ax.plot_trisurf(
             verts[:, 0], verts[:, 1], verts[:, 2]
             # , triangles=faces,
-            , alpha=0.6, edgecolor='none'
+            , edgecolor='none'
         )
 
         ########## change the face colors ####################
@@ -511,12 +511,12 @@ class ResponseSurfaceModel:
         #                            cmap_key)  
 
         # possibly add a colormap
-        cbar = fig.colorbar(mappable, ax=ax, extend='both', pad=0.1)
+        cbar = fig.colorbar(mappable, ax=ax, pad=0.2)
         cbar.set_label(f'L/D')
 
         ax.set_xlabel(fancy_labels[AOA_key])
         ax.set_ylabel(fancy_labels[J_key])
-        ax.set_zlabel('$\delta_e$')
+        ax.set_zlabel(fancy_labels[DELTA_E_key])
 
         ax.set_xlim(AOA_min, AOA_max)
         ax.set_ylim(J_min, J_max)
@@ -529,7 +529,7 @@ class ResponseSurfaceModel:
         else:
             plt.show()
 
-    def plot_isosurfaces(self, key, values, save=False, resolution=50):
+    def plot_isosurfaces(self, key, values=None, save=False, resolution=50, n_surfaces = 7):
         """
         Plot multiple isosurfaces for the given key and list of values.
         The domain is sampled in a meshgrid between the bounds of self.data[i] for i=1, 2, 3.
@@ -554,6 +554,12 @@ class ResponseSurfaceModel:
         # Set up the plot
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
+
+        if values is None:
+            rng = [np.min(self.ground_truth[key]), np.max(self.ground_truth[key])]
+            delta_rng = rng[1] - rng[0]
+            margin = 0.1 * delta_rng
+            values = np.linspace(rng[0] + margin / 2, rng[1] - margin / 2, n_surfaces)
 
         # Use a colormap to color the isosurfaces
         cmap = plt.get_cmap(cmap_key)
@@ -580,12 +586,12 @@ class ResponseSurfaceModel:
         # Add a colorbar
         mappable = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         mappable.set_array(values)
-        cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=10)
-        cbar.set_label(f'{key}')
+        cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=10, pad=0.2)
+        cbar.set_label(fancy_labels[key])
 
         ax.set_xlabel(fancy_labels[AOA_key])
         ax.set_ylabel(fancy_labels[J_key])
-        ax.set_zlabel('$\delta_e$')
+        ax.set_zlabel(fancy_labels[DELTA_E_key])
 
         ax.set_xlim(AOA_min,AOA_max)
         ax.set_ylim(J_min,J_max)
@@ -604,7 +610,7 @@ class ResponseSurfaceModel:
         RE_HIGH = 1 /  1.48 / 1e-5 * MAC * 40
         RE_LOW = 1 /  1.48 / 1e-5 * MAC * 20
 
-        fig, ax = plt.subplots(figsize=(4, 3))
+        fig, ax = plt.subplots(figsize=(4, 3.5))
 
         dataref = unpack_RSM_data(low_re_df)
         ref_mask = np.logical_and(np.abs(dataref[3] - DELTA_E) < tolde, np.abs(dataref[2] - J) < tolj)  # should be full, but doesn't hurt to double check
@@ -619,7 +625,7 @@ class ResponseSurfaceModel:
 
             x_fit = np.linspace(min(xvarref), max(xvarref), 100)
             z_fit = np.polyval(coeffs, x_fit)
-            label = f'Quadratic fit, Re_{{MAC}} = {RE_LOW:.2}'
+            label = f'Quadratic fit, $Re_{{MAC}} = {RE_LOW:.2}$'
         else: # use linear fit
             coeffs = np.polyfit(xvarref, zvarref, 1)
 
@@ -715,7 +721,7 @@ class ResponseSurfaceModel:
         adj = (X, Y, np.full(X.shape, DELTA_E)) if DELTA_E is not None else (np.full(X.shape, AOA), X, Y) if AOA is not None else (X, np.full(X.shape, J), Y)
         Z = self._evaluate_from_AJD(self.coefficients[key], *adj)
 
-        ax.plot_surface(X, Y, Z, color='red', alpha=0.3, label='Response Surface Model')
+        ax.plot_surface(X, Y, Z, color='red', alpha=0.6, label='Response Surface Model')
 
 
         xlabel = AOA_key if DELTA_E is not None else AOA_key if J is not None else J_key
