@@ -10,13 +10,15 @@ from skimage import measure
 
 #TODO: update keys if relevant
 # keys_to_model = ['CL', 'CD', 'CMpitch']
-keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2', 'TC_thrust_cor', 'CT_thrust_cor']
+keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2',
+                #   'TC_thrust_cor', 'CT_thrust_cor'
+                  ]
 CL_key = keys_to_model[0]
 CD_key = keys_to_model[1]
 CMpitch_key = keys_to_model[2]
 
-TC_key = keys_to_model[3]
-CT_key = keys_to_model[4]
+TC_key = keys_to_model[3] if len(keys_to_model) > 3 else ''
+CT_key = keys_to_model[4] if len(keys_to_model) > 4 else ''
 
 AOA_key = 'AoA_cor'
 DELTA_E_key = 'delta_e'
@@ -440,12 +442,12 @@ class ResponseSurfaceModel:
         plt.clf()
 
 
-    def plot_trim_isosurface(self, save=False, resolution=50):
+    def plot_trim_isosurface(self, save=False, resolution=50, levels=20):
         """
         Plot a trim isosurface colored according to L/D.
         """
 
-        def map_colors(p3dc, func, cmap=cmap_key):
+        def map_colors(p3dc, func, cmap=cmap_key, discrete=10):
                 """
             Color a tri-mesh according to a function evaluated in each barycentre.
 
@@ -470,6 +472,12 @@ class ResponseSurfaceModel:
                 
                 # compute the function in the barycentres
                 values = func(xb, yb, zb)
+
+                if isinstance(discrete, int):
+                    m, M = min(values), max(values)
+                    step = (M - m) / discrete
+
+                    values = ((values - m) // step) * step + m
 
                 # usual stuff
                 norm = Normalize()
@@ -497,12 +505,18 @@ class ResponseSurfaceModel:
         RSM_CMpitch = self._evaluate_from_AJD(
             self.coefficients[CMpitch_key], AOA_grid, J_grid, DELTA_E_grid
         )
-        # RSM_CL = self._evaluate_from_AJD(
-        #     self.coefficients[CL_key], AOA_grid, J_grid, DELTA_E_grid
-        # )
-        # RSM_CD = self._evaluate_from_AJD(
-        #     self.coefficients[CD_key], AOA_grid, J_grid, DELTA_E_grid
-        # )
+        RSM_CL = self._evaluate_from_AJD(
+            self.coefficients[CL_key], AOA_grid, J_grid, DELTA_E_grid
+        )
+        RSM_CD = self._evaluate_from_AJD(
+            self.coefficients[CD_key], AOA_grid, J_grid, DELTA_E_grid
+        )
+
+        L__D = RSM_CL / RSM_CD
+        L__D[np.abs(RSM_CMpitch) > 1e-3] = 0
+        argmax_flat = np.argmax(L__D) 
+        multi_index = np.unravel_index(argmax_flat, (L__D).shape) 
+
 
         verts, faces, _, _ = measure.marching_cubes(RSM_CMpitch, level=0)
         
@@ -522,11 +536,13 @@ class ResponseSurfaceModel:
             , edgecolor='none'
         )
 
+        # ax.scatter(AOA_grid[multi_index], J_grid[multi_index], DELTA_E_grid[multi_index], marker='x', color='k')
+
         ########## change the face colors ####################
         mappable = map_colors(p3dc,
                                lambda a, j, d: self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) /
                                  self._evaluate_from_AJD(self.coefficients[CD_key], a, j, d),
-                                   cmap_key)
+                                   cmap_key, discrete=levels)
         
         # mappable = map_colors(p3dc,
         #                        lambda a, j, d: np.abs(self._evaluate_from_AJD(self.coefficients[CL_key], a, j, d) /
@@ -549,6 +565,8 @@ class ResponseSurfaceModel:
 
         if save:
             plt.savefig('plots/trim_isosurface.svg')
+            # plt.savefig('plots/trim_isosurface.png')
+            
         else:
             plt.show()
         plt.clf()
@@ -852,6 +870,55 @@ class ResponseSurfaceModel:
         plt.tight_layout()
         if save:
             plt.savefig('plots/RSM_1D_{}_{}.svg'.format(key, xlabel))
+        else:
+            plt.show()
+        plt.clf()
+
+    def plot_fancy_RSM(self, key, save=False, tolde = 1e-3, tolaoa=0.1, tolj=0.1):
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        for color, DELTA_E in zip(['red', 'blue'],[-10, 10]):
+
+            mask = np.abs(self.data[3]-DELTA_E)<tolde
+
+            xvar = self.data[1][mask]
+            yvar = self.data[2][mask]
+
+            xvarref = xvar
+            yvarref = yvar
+            zvarref = self.ground_truth[key][mask]
+            ax.scatter(xvarref, yvarref, zvarref, color=color, marker='x')
+
+            dataref = unpack_RSM_data(self.validation_dataframe)
+            ref_mask = np.abs(dataref[3]-DELTA_E)<tolde
+
+            zvarref = self.validation_dataframe[key].to_numpy()[ref_mask]
+            xvarref = dataref[1][ref_mask]
+            yvarref = dataref[2][ref_mask]
+            ax.scatter(xvarref, yvarref, zvarref, color=color, marker='o')
+            
+            # Create a grid to interpolate onto
+            grid_x, grid_y = np.linspace(xvar.min(), xvar.max(), 100), np.linspace(yvar.min(), yvar.max(), 100)
+            X, Y = np.meshgrid(grid_x, grid_y)
+
+            adj = (X, Y, np.full(X.shape, DELTA_E))
+            Z = self._evaluate_from_AJD(self.coefficients[key], *adj)
+
+            ax.plot_surface(X, Y, Z, color=color, alpha=0.6, label=f'$\delta_e = {DELTA_E}$')
+
+
+        xlabel = AOA_key
+        ylabel = J_key
+
+        ax.set_xlabel(fancy_labels[xlabel])
+        ax.set_ylabel(fancy_labels[ylabel])
+        ax.set_zlabel(fancy_labels[key])
+        ax.legend()
+        ax.grid()
+        if save:
+            plt.savefig('plots/RSM_fancy_{}_{}_{}.svg'.format(key, xlabel, ylabel))
         else:
             plt.show()
         plt.clf()

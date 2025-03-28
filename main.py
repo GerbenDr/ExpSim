@@ -120,7 +120,7 @@ stds_mean = sum(stds) / N_repetition_points  # STDS for all variables
 for key in rsm.keys_to_model:
     print(f'standard deviation for measurement {key}: {stds_mean[key]:.8f}')
 
-rsm_instance.print_variance_report() # compare model STD to measurement STD (should be around 1OoM higher)
+rsm_instance.print_variance_report() # compare model STD to measurement STD (should be around 1 OoM higher)
 
 ## ---------------------------------------------------------------------
 ## Validation
@@ -133,10 +133,11 @@ rsm_instance.print_hypothesis_test_results()
 ## Create relevant plots
 ## ---------------------------------------------------------------------
 # other plots available under rsm class
-rsm_instance.plot_trim_isosurface(resolution=20, save=saveallplots)
+rsm_instance.plot_trim_isosurface(resolution=50, save=saveallplots, levels=50)
 rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 0, 10], save=saveallplots)
 
 for key in rsm.keys_to_model:
+    rsm_instance.plot_fancy_RSM(save=saveallplots, key=key)
     rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.6, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
     rsm_instance.plot_RSM_1D(save=saveallplots, key=key, AOA=2, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
     rsm_instance.plot_RSM_2D(save=saveallplots, key=key, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
