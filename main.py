@@ -133,7 +133,7 @@ rsm_instance.print_hypothesis_test_results()
 ## Create relevant plots
 ## ---------------------------------------------------------------------
 # other plots available under rsm class
-rsm_instance.plot_trim_isosurface(resolution=50, save=saveallplots, levels=50)
+rsm_instance.plot_trim_isosurface(resolution=50, save=saveallplots, levels=20)
 rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 0, 10], save=saveallplots)
 
 for key in rsm.keys_to_model:

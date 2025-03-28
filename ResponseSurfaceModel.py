@@ -11,7 +11,7 @@ from skimage import measure
 #TODO: update keys if relevant
 # keys_to_model = ['CL', 'CD', 'CMpitch']
 keys_to_model = ['CL_cor2',	'CD_cor2', 'CMpitch_cor2',
-                #   'TC_thrust_cor', 'CT_thrust_cor'
+                  'TC_thrust_cor', 'CT_thrust_cor'
                   ]
 CL_key = keys_to_model[0]
 CD_key = keys_to_model[1]
