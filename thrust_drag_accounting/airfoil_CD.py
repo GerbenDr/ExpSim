@@ -1,33 +1,57 @@
-import numpy as np
-from scipy.interpolate import interp1d
+import pandas as pd
+from scipy.interpolate import LinearNDInterpolator
+import os
+base_dir = os.path.dirname(__file__)
 
-# Extracted data from the file
-# based on xfoil using:
-# xtr = 0.05 for top and bottom
-# Ncrit = 9
-# Re = 419512
-alpha_data = np.array([
-    0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
-    5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.5, 9.0, 9.5, 10.0
-])
+def parse_xfoil_file(filepath, delta_e):
+    with open(filepath, "r") as f:
+        lines = f.readlines()
 
-cl_data = np.array([
-   -0.0000, 0.0535, 0.1070, 0.1604, 0.2137, 0.2669, 0.3198, 0.3726, 0.4250, 0.4770,
-    0.5286, 0.5796, 0.6299, 0.6791, 0.7239, 0.7638, 0.8310, 0.8624, 0.8944, 0.9241
-])
+    # Find start of data
+    for i, line in enumerate(lines):
+        if line.strip().startswith("alpha"):
+            start_idx = i + 2
+            break
 
-cd_data = np.array([
-    0.01365, 0.01367, 0.01370, 0.01376, 0.01384, 0.01395, 0.01408, 0.01424, 0.01443, 0.01465,
-    0.01490, 0.01520, 0.01554, 0.01597, 0.01674, 0.01783, 0.02061, 0.02179, 0.02330, 0.02556
-])
+    data = []
+    for line in lines[start_idx:]:
+        if line.strip() == "":
+            continue
+        parts = line.strip().split()
+        if len(parts) < 5:
+            continue
+        # Only extract alpha, CL, CD, CDp, CM
+        row = [float(parts[j]) for j in range(5)] + [float(delta_e)]
+        data.append(row)
+
+    df = pd.DataFrame(data, columns=["alpha", "CL", "CD", "CDp", "CM", "delta_e"])
+    return df
+
+def build_interpolators(df):
+    points = df[["alpha", "delta_e"]].values
+    cl_values = df["CL"].values
+    cd_values = df["CD"].values
+
+    cl_interp = LinearNDInterpolator(points, cl_values)
+    cd_interp = LinearNDInterpolator(points, cd_values)
+
+    return cl_interp, cd_interp
 
 
-# Interpolation function
-cd_interp = interp1d(alpha_data, cd_data, kind='linear', bounds_error=False, fill_value="extrapolate")
-cl_interp = interp1d(alpha_data, cl_data, kind='linear', bounds_error=False, fill_value="extrapolate")
+file_paths = {
+    "+10": os.path.join(base_dir, "aseq_-10_10_+10de.txt"),
+    "0":   os.path.join(base_dir, "aseq_-10_10_0de.txt"),
+    "-10": os.path.join(base_dir, "aseq_-10_10_-10de.txt"),
+}
 
-def xfoil_airfoil_CD(alpha):
-    return float(cd_interp(alpha))
+dfs = [
+    parse_xfoil_file(file_paths["+10"], 10),
+    parse_xfoil_file(file_paths["0"], 0),
+    parse_xfoil_file(file_paths["-10"], -10),
+]
 
-def xfoil_airfoil_CL(alpha):
-    return float(cl_interp(alpha))
+full_df = pd.concat(dfs, ignore_index=True)
+
+xfoil_airfoil_CL, xfoil_airfoil_CD = build_interpolators(full_df)
+
+

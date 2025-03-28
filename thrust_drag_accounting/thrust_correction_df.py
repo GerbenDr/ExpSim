@@ -59,24 +59,25 @@ def thrust_iteration(row, current_thrust):
     # r_wake:
     r_wake = constants.D_PROP*0.5*np.sqrt((row['V']+v_i)/(row['V'] + 2 * v_i))
     b_half_wake = 2*r_wake
+    delta_e = row['delta_e']
 
     # Drag with original velocity
     # find lift and drag:
-    D_motor_off = calculate_blown_area_drag(alpha, rho, htail_alpha_mo, htail_velocity(alpha), b_half_wake)
+    D_motor_off = calculate_blown_area_drag(alpha, rho, htail_alpha_mo, htail_velocity(alpha), b_half_wake, delta_e)
 
     # Drag with velocity + induced velocity
     htail_velocity_motor_on = np.sqrt((np.cos(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha) + v_i)**2 + (np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha))**2)
     htail_alpha_motor_on = np.rad2deg(np.arcsin(np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha)/htail_velocity_motor_on))
-    D_motor_on = calculate_blown_area_drag(alpha, rho, htail_alpha_motor_on, htail_velocity_motor_on, b_half_wake)
+    D_motor_on = calculate_blown_area_drag(alpha, rho, htail_alpha_motor_on, htail_velocity_motor_on, b_half_wake, delta_e)
 
 
     delta_D = D_motor_on - D_motor_off
     return float(row['T_0']) + delta_D
 
-def calculate_blown_area_drag(alpha, rho, htail_alpha, htail_velocity, b_half_wake):
+def calculate_blown_area_drag(alpha, rho, htail_alpha, htail_velocity, b_half_wake, delta_e):
     q_mo = 0.5 * rho * (htail_velocity ** 2)
-    L_local = q_mo * xfoil_airfoil_CL(htail_alpha) * b_half_wake * constants.C_HTAIL
-    D_local = q_mo * xfoil_airfoil_CD(htail_alpha) * b_half_wake * constants.C_HTAIL
+    L_local = q_mo * xfoil_airfoil_CL(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
+    D_local = q_mo * xfoil_airfoil_CD(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
     D_global , L_global = calculate_global_L_D(L_local, D_local, htail_alpha, alpha)
     return D_global
 
@@ -84,7 +85,6 @@ def calculate_global_L_D(L_local_mo, D_local_mo, alpha_local, alpha):
     D = np.sin(np.deg2rad(alpha - alpha_local)) * L_local_mo + np.cos(np.deg2rad(alpha - alpha_local)) * D_local_mo
     L = np.cos(np.deg2rad(alpha - alpha_local)) * L_local_mo - np.sin(np.deg2rad(alpha - alpha_local)) * D_local_mo
     return L, D
-
 
 
 def thrust_correction(df, tol=1e-12, max_iter=100):
