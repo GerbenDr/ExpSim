@@ -351,7 +351,7 @@ class ResponseSurfaceModel:
         return dalpha, dj, dde
 
     def plot_derivative_vs_alpha(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 100), DELTA_E = [-10, 10], J=[1.6]):
-        fig, ax = plt.subplots(figsize=(8, 3))
+        fig, ax = plt.subplots(figsize=(6, 3))
 
         colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(J) * len(DELTA_E))))
         
@@ -879,35 +879,37 @@ class ResponseSurfaceModel:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        for color, DELTA_E in zip(['red', 'blue'],[-10, 10]):
+        for color, DELTA_E in zip(['red', 'green', 'blue'],[-10, 0, 10]):
 
             mask = np.abs(self.data[3]-DELTA_E)<tolde
+            if sum(mask) > 0:
 
-            xvar = self.data[1][mask]
-            yvar = self.data[2][mask]
+                xvar = self.data[1][mask]
+                yvar = self.data[2][mask]
 
-            xvarref = xvar
-            yvarref = yvar
-            zvarref = self.ground_truth[key][mask]
-            ax.scatter(xvarref, yvarref, zvarref, color=color, marker='x')
+                xvarref = xvar
+                yvarref = yvar
+                zvarref = self.ground_truth[key][mask]
+                ax.scatter(xvarref, yvarref, zvarref, color=color, marker='x')
 
             dataref = unpack_RSM_data(self.validation_dataframe)
             ref_mask = np.abs(dataref[3]-DELTA_E)<tolde
 
-            zvarref = self.validation_dataframe[key].to_numpy()[ref_mask]
-            xvarref = dataref[1][ref_mask]
-            yvarref = dataref[2][ref_mask]
-            ax.scatter(xvarref, yvarref, zvarref, color=color, marker='o')
+            if sum(ref_mask) > 0:
+
+                zvarref = self.validation_dataframe[key].to_numpy()[ref_mask]
+                xvarref = dataref[1][ref_mask]
+                yvarref = dataref[2][ref_mask]
+                ax.scatter(xvarref, yvarref, zvarref, color=color, marker='o')
             
             # Create a grid to interpolate onto
-            grid_x, grid_y = np.linspace(xvar.min(), xvar.max(), 100), np.linspace(yvar.min(), yvar.max(), 100)
+            grid_x, grid_y = np.linspace(self.data[1].min(), self.data[1].max(), 25), np.linspace(self.data[2].min(), self.data[2].max(), 25)
             X, Y = np.meshgrid(grid_x, grid_y)
 
             adj = (X, Y, np.full(X.shape, DELTA_E))
             Z = self._evaluate_from_AJD(self.coefficients[key], *adj)
 
-            ax.plot_surface(X, Y, Z, color=color, alpha=0.6, label=f'$\delta_e = {DELTA_E}$')
-
+            ax.plot_surface(X, Y, Z, color=color, alpha=0.6, label=f'$\delta_e = {DELTA_E}$' + ' (interpolated)' if DELTA_E not in [-10, 10] else f'$\delta_e = {DELTA_E}$')
 
         xlabel = AOA_key
         ylabel = J_key
