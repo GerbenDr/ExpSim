@@ -1,10 +1,4 @@
-# 
-# 03/27/2025 08:18:34
-# The parameters defined in the project are:
-# ,P1 - inlet_x [m s^-1],P2 - inlet_y [m s^-1],P3 - inlet_z [m s^-1],P4 - prop_location_x [m s^-1],P5 - prop_location_z [m s^-1]
-# 
-# The following header line defines the name of the columns by reference to the parameters.
-Name,P1,P2,P3,P4,P5
+﻿Name,P1,P2,P3,P4,P5
 DP 0,19.95,0,1.395,19.88983,1.4544607
 DP 1,19.99,0,0.7,19.92819,0.98562354
 DP 2,19.805,0,-2.785,19.951157,-1.2981255

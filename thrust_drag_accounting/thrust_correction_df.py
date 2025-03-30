@@ -54,7 +54,9 @@ def thrust_iteration(row, current_thrust):
     # Induced velocity guess
     alpha = row['AoA']
     rho = row['rho']
-    htail_alpha_mo = htail_alpha(alpha)
+    freestream_velocity = row['V']
+    htail_alpha_mo = htail_alpha(alpha, freestream_velocity)
+    htail_velocity_mo = htail_velocity(alpha, freestream_velocity)
     v_i = 0.5 * np.sqrt(row[ 'V']**2 + (2 * current_thrust) / (constants.S_PROP * row['rho'])) - row['V'] / 2
     # r_wake:
     r_wake = constants.D_PROP*0.5*np.sqrt((row['V']+v_i)/(row['V'] + 2 * v_i))
@@ -63,15 +65,18 @@ def thrust_iteration(row, current_thrust):
 
     # Drag with original velocity
     # find lift and drag:
-    D_motor_off = calculate_blown_area_drag(alpha, rho, htail_alpha_mo, htail_velocity(alpha), b_half_wake, delta_e)
+    D_motor_off = calculate_blown_area_drag(alpha, rho, htail_alpha_mo, htail_velocity_mo, b_half_wake, delta_e)
 
     # Drag with velocity + induced velocity
-    htail_velocity_motor_on = np.sqrt((np.cos(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha) + v_i)**2 + (np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha))**2)
-    htail_alpha_motor_on = np.rad2deg(np.arcsin(np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity(alpha)/htail_velocity_motor_on))
+    htail_velocity_motor_on = np.sqrt((np.cos(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo + v_i)**2 + (np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo)**2)
+    print('V:', htail_velocity_motor_on)
+    htail_alpha_motor_on = np.rad2deg(np.arcsin(np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo/htail_velocity_motor_on))
+    print('alpha:',htail_alpha_motor_on)
     D_motor_on = calculate_blown_area_drag(alpha, rho, htail_alpha_motor_on, htail_velocity_motor_on, b_half_wake, delta_e)
 
 
-    delta_D = D_motor_on - D_motor_off
+    delta_D = 2*( D_motor_on - D_motor_off)
+
     return float(row['T_0']) + delta_D
 
 def calculate_blown_area_drag(alpha, rho, htail_alpha, htail_velocity, b_half_wake, delta_e):
@@ -144,13 +149,15 @@ def plot_thrust_iteration_example(row, tol=1e-12, max_iter=100):
 
 if __name__ == "__main__":
     # Read the data
-    file_path = 'uncorrected_elevator_10.txt'
+    file_path = 'uncorrected_elevator_-10.txt'
     df = read_data_to_df(file_path)
+    df['delta_e'] = -10
 
     # Run thrust correction for each row
     thrust_correction(df)
     # Optionally plot iteration details for one row (e.g. row 0)
     plot_thrust_iteration_example(df.loc[0])
+    print(df.loc[0])
 
     # Export the updated DataFrame (with T_0 and final thrust) to a CSV
     df.to_csv('corrected_elevator_data.csv', index=False)
