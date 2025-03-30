@@ -138,8 +138,8 @@ rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 0, 10], save=saveallplots)
 
 for key in rsm.keys_to_model:
     rsm_instance.plot_fancy_RSM(save=saveallplots, key=key)
-    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.6, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
-    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, AOA=2, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
+    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, J=1.8, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
+    rsm_instance.plot_RSM_1D(save=saveallplots, key=key, AOA=7, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
     rsm_instance.plot_RSM_2D(save=saveallplots, key=key, DELTA_E= -10, reference_dataframe='self', validation_dataframe='self')
 
     rsm_instance.plot_isosurfaces(key, save=saveallplots, n_surfaces = 10)

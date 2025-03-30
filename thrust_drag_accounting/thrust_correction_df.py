@@ -83,8 +83,8 @@ def calculate_blown_area_drag(alpha, rho, htail_alpha, htail_velocity, b_half_wa
     L_local = q_mo * xfoil_airfoil_CL(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
     D_local = q_mo * xfoil_airfoil_CD(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
     L_global, D_global = calculate_global_L_D(L_local, D_local, htail_alpha, alpha)
-    print('D_local vs global:', D_local, D_global)
-    print('L_local vs global:', L_local, L_global)
+    # print('D_local vs global:', D_local, D_global)
+    # print('L_local vs global:', L_local, L_global)
     return D_global
 
 def calculate_global_L_D(L_local_mo, D_local_mo, alpha_local, alpha):
