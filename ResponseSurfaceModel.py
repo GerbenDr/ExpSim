@@ -650,7 +650,7 @@ class ResponseSurfaceModel:
 
     
 
-    def plot_low_Re_comp(self, key, low_re_df, save=False, J=1.8, DELTA_E=-10, tolde = 1e-3, tolj=0.1, plot_training=True):
+    def plot_low_Re_comp(self, key, low_re_df, save=False, J=1.8, DELTA_E=-10, tolde = 1e-3, tolj=0.01, plot_training=True):
 
         MAC = 0.165
         RE_HIGH = 1 /  1.48 / 1e-5 * MAC * 40
