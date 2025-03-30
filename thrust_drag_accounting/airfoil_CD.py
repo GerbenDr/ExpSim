@@ -1,6 +1,7 @@
 import pandas as pd
 from scipy.interpolate import LinearNDInterpolator
 import os
+import matplotlib.pyplot as plt
 base_dir = os.path.dirname(__file__)
 
 def parse_xfoil_file(filepath, delta_e):
@@ -51,6 +52,21 @@ dfs = [
 ]
 
 full_df = pd.concat(dfs, ignore_index=True)
+xfoil_airfoil_CL, xfoil_airfoil_CD = build_interpolators(full_df)
+
+def plot_drag_vs_alpha(df):
+    plt.figure()
+    for delta_e in sorted(df["delta_e"].unique()):
+        subset = df[df["delta_e"] == delta_e].sort_values("alpha")
+        plt.plot(subset["alpha"], subset["CD"], label=f"δe = {delta_e}")
+    plt.xlabel("Angle of Attack (α)")
+    plt.ylabel("Drag Coefficient (CD)")
+    plt.title("CD vs Alpha for different δe")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+plot_drag_vs_alpha(full_df)
 
 xfoil_airfoil_CL, xfoil_airfoil_CD = build_interpolators(full_df)
 

@@ -15,6 +15,7 @@ from thrust_drag_accounting.htail_alpha import htail_alpha, htail_velocity
 
 
 
+
 def read_data_to_df(file_path):
     """Reads the TSV file into a Pandas DataFrame."""
     df = pd.read_csv(file_path, delimiter='\t')
@@ -69,13 +70,11 @@ def thrust_iteration(row, current_thrust):
 
     # Drag with velocity + induced velocity
     htail_velocity_motor_on = np.sqrt((np.cos(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo + v_i)**2 + (np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo)**2)
-    print('V:', htail_velocity_motor_on)
     htail_alpha_motor_on = np.rad2deg(np.arcsin(np.sin(np.deg2rad(htail_alpha_mo)) * htail_velocity_mo/htail_velocity_motor_on))
-    print('alpha:',htail_alpha_motor_on)
     D_motor_on = calculate_blown_area_drag(alpha, rho, htail_alpha_motor_on, htail_velocity_motor_on, b_half_wake, delta_e)
+    # print('drag, motor off and on:', D_motor_off, D_motor_on)
 
-
-    delta_D = 2*( D_motor_on - D_motor_off)
+    delta_D = 2*(D_motor_on - D_motor_off) # the 2 is there to account for both motors!
 
     return float(row['T_0']) + delta_D
 
@@ -83,7 +82,9 @@ def calculate_blown_area_drag(alpha, rho, htail_alpha, htail_velocity, b_half_wa
     q_mo = 0.5 * rho * (htail_velocity ** 2)
     L_local = q_mo * xfoil_airfoil_CL(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
     D_local = q_mo * xfoil_airfoil_CD(htail_alpha, delta_e) * b_half_wake * constants.C_HTAIL
-    D_global , L_global = calculate_global_L_D(L_local, D_local, htail_alpha, alpha)
+    L_global, D_global = calculate_global_L_D(L_local, D_local, htail_alpha, alpha)
+    print('D_local vs global:', D_local, D_global)
+    print('L_local vs global:', L_local, L_global)
     return D_global
 
 def calculate_global_L_D(L_local_mo, D_local_mo, alpha_local, alpha):
@@ -146,6 +147,25 @@ def plot_thrust_iteration_example(row, tol=1e-12, max_iter=100):
     plt.grid(True)
     plt.show()
 
+def plot_thrust_vs_alpha(df):
+    """
+    Filters for V == 40 and plots all Thrust vs AoA curves for different J values on one figure.
+    """
+    df_filtered = df[np.abs(df['V'] - 40) <= 1]
+    unique_Js = df_filtered['J_M1'].unique()
+    plt.figure()
+
+    for j_val in unique_Js:
+        subset = df_filtered[df_filtered['J_M1'] == j_val]
+        subset = subset.sort_values('AoA')
+        plt.plot(subset['AoA'], subset['thrust'], label=f'J = {j_val:.2f}')
+
+    plt.xlabel('Angle of Attack (deg)')
+    plt.ylabel('Thrust (N)')
+    plt.title('Thrust vs. AoA for Different J Values (V = 40)')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
 if __name__ == "__main__":
     # Read the data
@@ -153,8 +173,17 @@ if __name__ == "__main__":
     df = read_data_to_df(file_path)
     df['delta_e'] = -10
 
+
+    pd.set_option('display.max_columns', None)  # Show all columns
+    pd.set_option('display.max_rows', None)  # Optional: Show all rows
+    pd.set_option('display.width', 0)  # Prevent line wrapping
+    print(df)
+
     # Run thrust correction for each row
-    thrust_correction(df)
+    df = thrust_correction(df)
+
+    # Plot thrust vs alpha
+    plot_thrust_vs_alpha(df)
     # Optionally plot iteration details for one row (e.g. row 0)
     plot_thrust_iteration_example(df.loc[0])
     print(df.loc[0])
