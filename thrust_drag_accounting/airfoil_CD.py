@@ -66,7 +66,7 @@ def plot_drag_vs_alpha(df):
     plt.grid(True)
     plt.show()
 
-plot_drag_vs_alpha(full_df)
+# plot_drag_vs_alpha(full_df)
 
 xfoil_airfoil_CL, xfoil_airfoil_CD = build_interpolators(full_df)
 

@@ -379,6 +379,54 @@ class ResponseSurfaceModel:
             plt.show()
         plt.clf()
 
+    def plot_derivative_vs_TC(self, key, derivative='alpha', save=False, AOA=[-4, 7], DELTA_E = [-10, 10]):
+
+        fig, ax = plt.subplots(figsize=(6, 3))
+
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E) * len(AOA))))
+
+        for alpha in AOA:
+            for i, delta_e in enumerate(DELTA_E):
+                c=next(colors)
+                mask = np.logical_and(self.dataframe[DELTA_E_key] == delta_e, np.abs(self.dataframe[AOA_key] - alpha) < 1e-1)
+                TC = self.ground_truth[TC_key][mask].to_numpy()
+                aoa = self.dataframe[AOA_key][mask].to_numpy()
+                j = self.dataframe[J_key][mask].to_numpy()
+                de = self.dataframe[DELTA_E_key][mask].to_numpy()
+
+                da, dj, dde = self.get_derivatives(aoa, j, de)
+                deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+
+                if i==0:
+                    ax.scatter(TC, deriv, label=f'$\\alpha = {alpha:.0f}, \delta_e = {delta_e:.0f}$', color=c, marker='x')
+                else:
+                    ax.scatter(TC, deriv, color=c, label=f'$\\alpha = {alpha:.0f}, \delta_e = {delta_e:.0f}$', marker='+')
+
+
+                j_int = np.linspace(j.min(), j.max(), 50)
+                a_int = np.full(j_int.shape, alpha)
+                de_int = np.full(j_int.shape, delta_e)
+                TC_int = self._evaluate_from_AJD(self.coefficients[TC_key], a_int, j_int, de_int)
+
+                da, dj, dde = self.get_derivatives(a_int, j_int, de_int)
+                deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+                ax.plot(TC_int, deriv, color=c)
+
+        var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        derivative_key = AOA_key if derivative == 'alpha' else J_key if derivative == 'J' else DELTA_E_key
+
+        ax.set_xlabel(fancy_labels[TC_key])
+        ax.set_ylabel(f'd{fancy_labels[key]} / d{fancy_labels[derivative_key]}')
+        ax.legend(loc='lower left', bbox_to_anchor=(1.0, 0.05),
+          ncol=1, fancybox=True, shadow=True)
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/{}_{}_vs_TC.svg'.format(key, var))
+        else:
+            plt.show()
+        plt.clf()
+
     def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
 
         fig = plt.figure()
