@@ -138,6 +138,7 @@ rsm_instance.print_hypothesis_test_results()
 # rsm_instance.plot_L__D_vs_alpha_J(DELTA_E=[-10, 0, 10], save=saveallplots)
 
 for key in rsm.keys_to_model:
+    rsm_instance.plot_scatter_vs_alpha_J(save=saveallplots, key=key)
     rsm_instance.plot_derivative_vs_alpha_TC(save=saveallplots, key=key, derivative='alpha', DELTA_E=[0])
     rsm_instance.plot_derivative_vs_alpha_TC(save=saveallplots, key=key, derivative='delta_e', DELTA_E=[0])
 

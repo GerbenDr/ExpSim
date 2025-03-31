@@ -498,6 +498,37 @@ class ResponseSurfaceModel:
 
         plt.clf()
 
+
+    def plot_scatter_vs_alpha_J(self, key, save=False, DELTA_E = [-10, 10], tolde = 1e-3):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        for color, delta_e in zip(['b', 'r'], DELTA_E):
+            mask = np.abs(self.data[3]-delta_e)<tolde
+
+            xvar = self.data[1][mask]
+            yvar = self.data[2][mask]
+
+            zvar = self.ground_truth[key][mask]
+
+            ax.scatter(xvar, yvar, zvar, color=color, marker='x', label=f'$\delta_e = {delta_e:.0f}$')
+
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[J_key])
+        ax.set_zlabel(fancy_labels[key])
+        ax.legend()
+        ax.grid()
+
+        ax.view_init(elev=30, azim=45)
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/scatter_{}_vs_alpha_J.svg'.format(key))
+        else:
+            plt.show()
+        plt.clf()
+
+
+
     def plot_L__D_vs_alpha_J(self, save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
 
         fig = plt.figure()
