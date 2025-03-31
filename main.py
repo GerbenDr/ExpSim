@@ -127,6 +127,7 @@ rsm_instance.print_variance_report() # compare model STD to measurement STD (sho
 ## ---------------------------------------------------------------------
 
 saveallplots = True
+# saveallplots = False
 
 rsm_instance.print_hypothesis_test_results()
 ## ---------------------------------------------------------------------

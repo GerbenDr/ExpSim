@@ -443,7 +443,7 @@ class ResponseSurfaceModel:
 
             TC_int = self._evaluate_from_AJD(self.coefficients[TC_key], X, Y, np.full(X.shape, delta_e))
             label=f'$\delta_e = {delta_e:.0f}$ (interpolated)' if delta_e not in [-10, 10] else f'$\delta_e = {delta_e:.0f}$'
-            ax.plot_surface(X, TC_int, deriv, label=label, color=c, alpha = 0.7)
+            ax.plot_surface(X, TC_int, deriv, label=label, alpha = 0.7, cmap=cmap_key)
 
         var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
         derivative_key = AOA_key if derivative == 'alpha' else J_key if derivative == 'J' else DELTA_E_key
@@ -453,6 +453,8 @@ class ResponseSurfaceModel:
         ax.set_zlabel(f'd{fancy_labels[key]} / d{fancy_labels[derivative_key]}')
         if len(DELTA_E) > 1:
             ax.legend()
+
+        ax.view_init(elev=30, azim=45)
 
         ax.grid()
         plt.tight_layout()
