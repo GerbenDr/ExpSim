@@ -24,8 +24,8 @@ AOA_key = 'AoA_cor'
 DELTA_E_key = 'delta_e'
 J_key = 'J_M1'
 
-cmap_key = 'jet'
-# cmap_key = 'viridis'
+# cmap_key = 'jet'
+cmap_key = 'viridis'
 
 
 fancy_labels = {CL_key : '$C_L$', CD_key: '$C_D$', CMpitch_key : '$C_M$',
@@ -425,6 +425,42 @@ class ResponseSurfaceModel:
             plt.savefig('plots/{}_{}_vs_TC.svg'.format(key, var))
         else:
             plt.show()
+        plt.clf()
+
+    def plot_derivative_vs_alpha_TC(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        colors = iter(plt.get_cmap(cmap_key)(np.linspace(0, 1, len(DELTA_E))))
+
+        X, Y = np.meshgrid(AOA, J)
+        
+        for delta_e in DELTA_E:
+            c=next(colors)
+            da, dj, dde = self.get_derivatives(X, Y, np.full(X.shape, delta_e))
+            deriv = da[key] if derivative == 'alpha' else dj[key] if derivative == 'J' else dde[key]
+
+            TC_int = self._evaluate_from_AJD(self.coefficients[TC_key], X, Y, np.full(X.shape, delta_e))
+            label=f'$\delta_e = {delta_e:.0f}$ (interpolated)' if delta_e not in [-10, 10] else f'$\delta_e = {delta_e:.0f}$'
+            ax.plot_surface(X, TC_int, deriv, label=label, color=c, alpha = 0.7)
+
+        var = 'alpha' if derivative == 'alpha' else 'J' if derivative == 'J' else 'delta_e'
+        derivative_key = AOA_key if derivative == 'alpha' else J_key if derivative == 'J' else DELTA_E_key
+
+        ax.set_xlabel(fancy_labels[AOA_key])
+        ax.set_ylabel(fancy_labels[TC_key])
+        ax.set_zlabel(f'd{fancy_labels[key]} / d{fancy_labels[derivative_key]}')
+        if len(DELTA_E) > 1:
+            ax.legend()
+
+        ax.grid()
+        plt.tight_layout()
+        if save:
+            plt.savefig('plots/{}_{}_vs_alpha_TC.svg'.format(key, var))
+        else:
+            plt.show()
+
         plt.clf()
 
     def plot_derivative_vs_alpha_J(self, key, derivative='alpha', save=False, AOA=np.linspace(-4, 7, 25), DELTA_E = [-10, 10], J = np.linspace(1.6, 2.4, 25)):
