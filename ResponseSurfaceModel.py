@@ -403,7 +403,7 @@ class ResponseSurfaceModel:
                     ax.scatter(TC, deriv, color=c, label=f'$\\alpha = {alpha:.0f}, \delta_e = {delta_e:.0f}$', marker='+')
 
 
-                j_int = np.linspace(j.min(), j.max(), 50)
+                j_int = np.linspace(1.6, 2.4, 50)
                 a_int = np.full(j_int.shape, alpha)
                 de_int = np.full(j_int.shape, delta_e)
                 TC_int = self._evaluate_from_AJD(self.coefficients[TC_key], a_int, j_int, de_int)
