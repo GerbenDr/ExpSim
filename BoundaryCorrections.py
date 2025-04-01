@@ -393,7 +393,7 @@ def apply_lift_interference_correction(df, df_less_tail):
     CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, V=40, visualise = False)
     a, b, c_coeff, d = CL_alpha_wing_poly
     CL_WING = a * df['AoA']**3 + b * df['AoA']**2 + c_coeff * df['AoA'] + d
-    delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
+    delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING / 2 / np.pi * 360
     
     # Calculate the AoA correction due to upwash gradient
     delta_alpha_upwash_gradient = c.TAU2_HALFCHORD * delta_alpha_upwash
@@ -415,7 +415,7 @@ def apply_lift_interference_correction(df, df_less_tail):
     delta_CM_upwash = 1 / 8 * delta_alpha_upwash_gradient * CL_alpha_wing_poly[2]
     
     # Calculate the tailplane angle of attack correction
-    delta_alpha_tail = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING * (1 + c.TAU2_TAILARM)
+    delta_alpha_tail = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING * (1 + c.TAU2_TAILARM) / 2 / np.pi * 360
     
     # Calculate the moment coefficient correction due to the tail
     CM_alpha_tail = get_CM_alpha_curve_tail()
@@ -446,7 +446,7 @@ def apply_lift_interference_correction_less_tail(df_less_tail):
     CL_alpha_wing_poly = get_CL_alpha_curve_less_tail(df_less_tail, V=40, visualise = False)
     a, b, c_coefficient, d = CL_alpha_wing_poly
     CL_WING = a * df_less_tail['AoA']**3 + b * df_less_tail['AoA']**2 + c_coefficient * df_less_tail['AoA'] + d
-    delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING
+    delta_alpha_upwash = c.DELTA * c.S_REF / c.C_TUNNEL * CL_WING / 2 / np.pi * 360
     
     # Calculate the AoA correction due to upwash gradient
     delta_alpha_upwash_gradient = c.TAU2_HALFCHORD * delta_alpha_upwash

@@ -145,3 +145,4 @@ mask_low_Re = np.hstack((
     np.arange(35, 44, 1),
 ))
 
+print(B_OVER_H_TUNNEL)
